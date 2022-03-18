@@ -11,7 +11,7 @@ const expectEnv = (key: string, message?: string) => {
 
 export const handler = (event: DynamoDBStreamEvent) => new BigQuery({
   projectId: expectEnv('GCP_PROJECT_ID'),
-  keyFilename: path.join(__dirname, 'gcp_keyfile.json'),
+  keyFilename: path.join(__dirname, `gcp_keyfile/${expectEnv('STAGE')}.json`),
 })
   .dataset(expectEnv('GCP_DATASET_ID'))
   .table(expectEnv('GCP_TABLE_ID'))

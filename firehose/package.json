@@ -4,7 +4,7 @@
   "description": "Data firehose from dynamo to bigquery",
   "main": "index.ts",
   "scripts": {
-    "build": "tsc && cp gcp_keyfile.json dist/",
+    "build": "tsc && cp -R gcp_keyfile dist/",
     "clean": "tsc --build --clean && rm -r dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
