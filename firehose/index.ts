@@ -9,6 +9,11 @@ const expectEnv = (key: string, message?: string) => {
   return val;
 };
 
+export const handler = () => {
+  console.log("It runs");
+};
+
+/*
 export const handler = (event: DynamoDBStreamEvent) => new BigQuery({
   projectId: expectEnv('GCP_PROJECT_ID'),
   keyFilename: path.join(__dirname, `gcp_keyfile/${expectEnv('STAGE')}.json`),
@@ -17,4 +22,5 @@ export const handler = (event: DynamoDBStreamEvent) => new BigQuery({
   .table(expectEnv('GCP_TABLE_ID'))
   .insert(event.Records)
 ;
+*/
 
