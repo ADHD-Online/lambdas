@@ -13,6 +13,8 @@ ARG NPM_TOKEN
 # transform arguments to env
 ARG STAGE
 ENV STAGE=$STAGE
+ARG CONFIG_TABLE_NAME
+ENV CONFIG_TABLE_NAME=$CONFIG_TABLE_NAME
 # proceed with deploy
 WORKDIR ${LAMBDA_TASK_ROOT}
 COPY package*.json ./
