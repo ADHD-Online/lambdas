@@ -6,7 +6,7 @@ import {
   ScheduleInitialAppointmentReminderViewResult as ViewResult,
 } from '@adhd-online/unified-types/messaging';
 
-export const FLOW_KEY = 'ScheduleInitialAppointmentReminder';
+export const FLOW_KEY = 'messaging#ScheduleInitialAppointmentReminder';
 
 export default async () => {
   const dynamoClient = new DynamoDBClient({ region: expectEnv('AWS_DEFAULT_REGION') });
@@ -14,7 +14,7 @@ export default async () => {
 
   const templates = await dynamoClient.send(new GetItemCommand({
     TableName: expectEnv('CONFIG_TABLE_NAME'),
-    Key: { flow: { S: FLOW_KEY } },
+    Key: { pk: { S: FLOW_KEY } },
   }));
   const { emailTemplate, smsTemplate } = TableData.parse(templates.Item);
 
