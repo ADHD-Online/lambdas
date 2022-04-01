@@ -16,7 +16,7 @@
     "typescript": "^4.6.2"
   },
   "dependencies": {
-    "@adhd-online/unified-types": "*",
+    "@adhd-online/unified-types": "^2",
     "@google-cloud/bigquery": "^5.11.0",
     "node-fetch": "^3.2.3"
   }
