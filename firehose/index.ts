@@ -1,7 +1,7 @@
 import path from 'path';
-import { BigQuery, Table } from '@google-cloud/bigquery';
+import { BigQuery } from '@google-cloud/bigquery';
 import { DynamoDBStreamEvent, StreamRecord } from '@adhd-online/unified-types/external/dynamodb/events';
-import { TableSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
+import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
 import { expectEnv, genSchema } from './util';
 
 const recordToTableName = (record: StreamRecord) => {
@@ -48,7 +48,7 @@ const recordToTableName = (record: StreamRecord) => {
         return 'patients';
 
       case ['userProfile', 'userProfile']:
-        return 'userprofile_auth0s';
+        return 'userprofiles';
 
       default:
         console.error('Could not classify record:', record);
@@ -68,7 +68,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     try {
       DynamoDBStreamEvent.parse(event);
     } catch (e) {
-      console.error(`Failed to validate event: ${'message' in e ? e.message : e}`);
+      console.error(`Failed to parse event: ${'message' in e ? e.message : e}`);
     }
   }
 
@@ -87,8 +87,15 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     for (const streamRecord of eventRecord.dynamodb) {
       const tableName = recordToTableName(streamRecord);
 
-      // create client for table, if it doesn't exist
-      tableClients[tableName] = tableClients[tableName] ?? dataset.table(tableName);
+      // create (client for) table, if it hasn't been made yet
+      if (!(tableName in tableClients)) {
+        tableClients[tableName] = dataset.table(tableName);
+
+        if (!(await tableClients[tableName].exists())) {
+          await dataset.createTable(tableName, {});
+        }
+      }
+
       // retrieve queue for table, or create one if it dosn't exist
       let tableQueue = tableQueues[tableName] = tableQueues[tableName] ?? [];
 
@@ -113,7 +120,6 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       tableQueue.push([recordWithMeta, { schema }]);
     }
   }
-
 
   // ingest
   const promises = [];
