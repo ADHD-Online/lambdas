@@ -5,60 +5,56 @@ import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/
 import { expectEnv, genSchema } from './util';
 
 const recordToTableName = (record: StreamRecord) => {
-  if (
-    record.StreamViewType === 'NEW_IMAGE' ||
-    record.StreamViewType === 'NEW_AND_OLD_IMAGES'
-  ) {
-    const pk = record.NewImage.pk;
-    const sk = record.NewImage.sk;
+  const { pk, sk } = record.Keys;
 
-    if (!('S' in pk && 'S' in sk)) {
-      throw new Error(
-        `Expected pk and sk to have type 'S' (string), ` +
-        `found pk: ${Object.keys(pk)[0]}, sk: ${Object.keys(sk)[0]}`
-      );
-    }
-
-    const pkPrefix = pk.S.split('#')[0];
-    const skSplit  = sk.S.split('#');
-    const skPrefix = skSplit[0];
-    const skSuffix = skSplit.at(-1);
-    const skType   = skSplit[1];
-
-    switch ([pkPrefix, skPrefix, skSuffix]) {
-      case ['patient', 'appointment']:
-        return 'appointments';
-
-      case ['patient', 'assessment', 'definition']:
-        return `assessment_${skType}_definitions`;
-
-      case ['patient', 'assessment', 'inFlight']:
-        return `assessment_${skType}_inflights`;
-
-      case ['patient', 'assessment', 'result']:
-        return `assessment_${skType}_results`;
-
-      case ['patient', 'journey']:
-        return 'journeys';
-
-      case ['userProfile', 'patientGoalsDef']:
-        return 'patientgoalsdefs';
-
-      case ['userProfile', 'patient']:
-        return 'patients';
-
-      case ['userProfile', 'userProfile']:
-        return 'userprofiles';
-
-      default:
-        console.error('Could not classify record:', record);
-        throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
-    }
-  } else {
+  if (!pk || !sk) {
     throw new Error(
-      `Stream view type must be NEW_AND_OLD_IMAGES, ` +
-      `however it is ${record.StreamViewType}`
+      'Expected record to have pk and sk, ' +
+      `found pk: ${pk}, sk: ${sk}`
     );
+  }
+
+  if (!('S' in pk && 'S' in sk)) {
+    throw new Error(
+      `Expected pk and sk to have type 'S' (string), ` +
+      `found pk: ${Object.keys(pk)[0]}, sk: ${Object.keys(sk)[0]}`
+    );
+  }
+
+  const pkPrefix = pk.S.split('#')[0];
+  const skSplit  = sk.S.split('#');
+  const skPrefix = skSplit[0];
+  const skSuffix = skSplit.at(-1);
+  const skType   = skSplit[1];
+
+  switch ([pkPrefix, skPrefix, skSuffix]) {
+    case ['patient', 'appointment']:
+      return 'appointments';
+
+    case ['patient', 'assessment', 'definition']:
+      return `assessment_${skType}_definitions`;
+
+    case ['patient', 'assessment', 'inFlight']:
+      return `assessment_${skType}_inflights`;
+
+    case ['patient', 'assessment', 'result']:
+      return `assessment_${skType}_results`;
+
+    case ['patient', 'journey']:
+      return 'journeys';
+
+    case ['userProfile', 'patientGoalsDef']:
+      return 'patientgoalsdefs';
+
+    case ['userProfile', 'patient']:
+      return 'patients';
+
+    case ['userProfile', 'userProfile']:
+      return 'userprofiles';
+
+    default:
+      console.error('Could not classify record:', record);
+      throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
   }
 };
 
@@ -105,9 +101,9 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       let tableQueue = tableQueues[tableName] = tableQueues[tableName] ?? [];
 
       const recordWithMeta = {
-        ...streamRecord,
-        metadata: {
-          eventName: eventRecord.eventName,
+        Item: streamRecord.NewImage,
+        Metadata: {
+          eventKind: eventRecord.eventName,
           timestamp: streamRecord.ApproximateCreationDateTime,
         },
       };
