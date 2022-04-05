@@ -1,6 +1,6 @@
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import Mustache from 'mustache';
-import { expectEnv } from './util';
+import { expectEnv, sendEmail, sendSms } from './util';
 import {
   TableData,
   ScheduleInitialAppointmentReminderViewResult as ViewResult,
@@ -22,31 +22,26 @@ export default async () => {
   const results: ViewResult[] = [];
 
   // perform actions
-  let success = true;
-  await Promise.all(results.map(async unparsedResult => {
+  await Promise.all(results.flatMap(unparsedResult => {
     const result = ViewResult.parse(unparsedResult);
+    const promises = [];
 
     if (result.email) {
-      console.log(`Sending email to ${result.email}`);
-      const message = Mustache.render(emailTemplate, result);
-
-      //TODO send message to SES
-      //     if failed, update success variable
+      promises.push(
+        sendEmail(result.email, Mustache.render(emailTemplate, result))
+      );
     }
 
     if (result.phone) {
-      console.log(`Sending sms to ${result.phone}`);
-      const message = Mustache.render(smsTemplate, result);
-
-      //TODO send message to SNS
-      //     if failed, update success variable
+      promises.push(
+        sendSms(result.phone, Mustache.render(smsTemplate, result))
+      );
     }
+
+    return promises;
   }));
 
   // run post-operation logic
-  if (success)
-    console.log('Sent all messages successfully');
-  else
-    console.log('Sent all messages with some errors');
+  console.log('Sent all messages successfully');
 };
 

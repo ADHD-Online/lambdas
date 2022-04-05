@@ -43,12 +43,13 @@ The following env variables are expected by the projects in here:
 
 ### Messaging
 
-| Variable             | Description
-| -------------------  | -----------
-| `STAGE`              | Stage of deployment (such as edge, uat, or prod)
-| `NPM_TOKEN`\*        | Token that can read the ADO npm package registry on Github
-| `AWS_DEFAULT_REGION` | 'us-east-2' most likely
-| `CONFIG_TABLE_NAME`  | The name of the dynamodb table that contains flow configs
+| Variable               | Description
+| ---------------------- | -----------
+| `STAGE`                | Stage of deployment (such as edge, uat, or prod)
+| `NPM_TOKEN`\*          | Token that can read the ADO npm package registry on Github
+| `AWS_DEFAULT_REGION`   | 'us-east-2' most likely
+| `CONFIG_TABLE_NAME`    | The name of the dynamodb table that contains flow configs
+| `EMAIL_SOURCE_ADDRESS` | Email address to use to send messages
 
 \* Denotes a build-time-only secret that should not end up in the final image
 
