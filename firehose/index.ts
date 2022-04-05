@@ -4,6 +4,8 @@ import { DynamoDBStreamEvent, StreamRecord } from '@adhd-online/unified-types/ex
 import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
 import { expectEnv, genSchema } from './util';
 
+const STAGE = expectEnv('STAGE');
+
 const recordToTableName = (record: StreamRecord) => {
   const { pk, sk } = record.Keys;
 
@@ -58,16 +60,10 @@ const recordToTableName = (record: StreamRecord) => {
   }
 };
 
-const STAGE = expectEnv('STAGE');
-
 export const handler = async (event: DynamoDBStreamEvent) => {
   if (STAGE !== 'prod') {
     // validate for errors
-    try {
-      DynamoDBStreamEvent.parse(event);
-    } catch (e) {
-      console.error(`Failed to parse event: ${'message' in e ? e.message : e}`);
-    }
+    DynamoDBStreamEvent.parse(event);
 
     const rowCount = event.Records.reduce((a, rec) => a + rec.dynamodb.length, 0);
     console.log(`Received ${rowCount} rows for ingestion`);
@@ -112,11 +108,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
       if (STAGE !== 'prod') {
         // validate for errors
-        try {
-          Schema.parse(schema);
-        } catch (e) {
-          console.error(`Failed to validate schema: ${'message' in e ? e.message : e}`);
-        }
+        Schema.parse(schema);
       }
 
       tableQueue.push([recordWithMeta, { schema }]);
