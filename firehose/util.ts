@@ -1,4 +1,5 @@
 import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
+
 export const expectEnv = (key: string, message?: string) => {
   const val = process.env[key];
   if (!key)
@@ -9,6 +10,12 @@ export const expectEnv = (key: string, message?: string) => {
 export const genSchema = <T>([name, thing]: [string, T]): Schema => {
   switch (typeof thing) {
     case 'object':
+      // in js, `typeof null` returns 'object'
+      // this is a historical language bug that may never be fixed
+      if (thing === null) {
+        throw new Error(`Can't generate schema for a 'null'`);
+      }
+
       return {
         name,
         type: 'RECORD',
@@ -39,7 +46,7 @@ export const genSchema = <T>([name, thing]: [string, T]): Schema => {
     case 'symbol':
     case 'undefined':
     default:
-      throw new Error(`Can't generate schema for a(n) ${typeof thing}`);
+      throw new Error(`Can't generate schema for a(n) '${typeof thing}'`);
   };
 };
 
