@@ -1,40 +1,36 @@
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import Mustache from 'mustache';
-import { expectEnv, sendEmail, sendSms } from './util';
 import {
-  TableData,
   ScheduleInitialAppointmentReminderViewResult as ViewResult,
 } from '@adhd-online/unified-types/messaging';
+import { fetchConfig, sendEmail, sendSms } from './util';
 
 export const FLOW_KEY = 'messaging#ScheduleInitialAppointmentReminder';
 
 export default async () => {
-  const dynamoClient = new DynamoDBClient({ region: expectEnv('AWS_DEFAULT_REGION') });
-  const gcpClient = null; //TODO
-
-  const templates = await dynamoClient.send(new GetItemCommand({
-    TableName: expectEnv('CONFIG_TABLE_NAME'),
-    Key: { pk: { S: FLOW_KEY } },
-  }));
-  const { emailTemplate, smsTemplate } = TableData.parse(templates.Item);
+  const { templates } = await fetchConfig(FLOW_KEY);
 
   //TODO fetch results from data lake
+  const gcpClient = null; //TODO
   const results: ViewResult[] = [];
 
   // perform actions
   await Promise.all(results.flatMap(unparsedResult => {
-    const result = ViewResult.parse(unparsedResult);
+    const viewData = ViewResult.parse(unparsedResult);
     const promises = [];
 
-    if (result.email) {
+    if (viewData.email) {
       promises.push(
-        sendEmail(result.email, Mustache.render(emailTemplate, result))
+        sendEmail(
+          viewData.email,
+          Mustache.render(templates.email.subject, viewData),
+          Mustache.render(templates.email.body, viewData),
+        )
       );
     }
 
-    if (result.phone) {
+    if (viewData.phone) {
       promises.push(
-        sendSms(result.phone, Mustache.render(smsTemplate, result))
+        sendSms(viewData.phone, Mustache.render(templates.sms, viewData))
       );
     }
 

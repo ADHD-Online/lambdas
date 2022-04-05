@@ -1,6 +1,10 @@
+import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
+import { ConfigTableData } from '@adhd-online/unified-types/messaging';
 
+const DYNAMO_CLIENT = new DynamoDBClient({});
 const SES_CLIENT = new SESClient({});
 const SNS_CLIENT = new SNSClient({ region: 'us-east-1' });
 const ENCODER = new TextEncoder();
@@ -10,6 +14,23 @@ export const expectEnv = (key: string, message?: string) => {
   if (!key)
     throw new Error(`Missing env variable ${key}: ` + message ?? '');
   return val;
+};
+
+const STAGE = expectEnv('STAGE');
+
+export const fetchConfig = async (flowKey: string) => {
+  const res = await DYNAMO_CLIENT.send(new GetItemCommand({
+    TableName: expectEnv('CONFIG_TABLE_NAME'),
+    Key: { pk: { S: flowKey } },
+  }));
+
+  const configs = unmarshall(res.Item);
+
+  if (STAGE !== 'prod') {
+    ConfigTableData.parse(configs);
+  }
+
+  return configs;
 };
 
 export const sendEmail = (
