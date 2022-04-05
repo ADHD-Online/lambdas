@@ -62,14 +62,19 @@ const recordToTableName = (record: StreamRecord) => {
   }
 };
 
+const STAGE = expectEnv('STAGE');
+
 export const handler = async (event: DynamoDBStreamEvent) => {
-  if (expectEnv('STAGE') != 'prod') {
+  if (STAGE !== 'prod') {
     // validate for errors
     try {
       DynamoDBStreamEvent.parse(event);
     } catch (e) {
       console.error(`Failed to parse event: ${'message' in e ? e.message : e}`);
     }
+
+    const rowCount = event.Records.reduce((a, rec) => a + rec.dynamodb.length, 0);
+    console.log(`Received ${rowCount} rows for ingestion`);
   }
 
   const dataset = new BigQuery({
@@ -108,7 +113,8 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       };
 
       const schema = genSchema(['Item', recordWithMeta]);
-      if (expectEnv('STAGE') != 'prod') {
+
+      if (STAGE !== 'prod') {
         // validate for errors
         try {
           Schema.parse(schema);
@@ -130,6 +136,6 @@ export const handler = async (event: DynamoDBStreamEvent) => {
   await Promise.all(promises);
 
   const count = Object.values(tableQueues).reduce((a: number, q: any[]) => a + q.length, 0);
-  console.log(`Bigquery successfully ingested ${count} rows`);
+  console.log(`Successfully ingested ${count} rows`);
 }
 
