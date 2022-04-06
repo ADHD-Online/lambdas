@@ -37,7 +37,6 @@ The following env variables are expected by the projects in here:
 | `NPM_TOKEN`\*    | Token that can read the ADO npm package registry on Github
 | `GCP_PROJECT_ID` | ID of the data lake project in gcp
 | `GCP_DATASET_ID` | ID of the data lake dataset in gcp
-| `GCP_TABLE_ID`   | ID of the data lake table in gcp
 
 \* Denotes a build-time-only secret that should not end up in the final image
 
@@ -49,7 +48,8 @@ The following env variables are expected by the projects in here:
 | `NPM_TOKEN`\*          | Token that can read the ADO npm package registry on Github
 | `AWS_DEFAULT_REGION`   | 'us-east-2' most likely
 | `CONFIG_TABLE_NAME`    | The name of the dynamodb table that contains flow configs
-| `EMAIL_SOURCE_ADDRESS` | Email address to use to send messages
+| `SES_SOURCE_IDENTITY`  | "ADHDOnline &lt;info@mail.adhdonline.com&gt;"
+| `SES_CONFIG_SET`       | ConfigSet to use
 
 \* Denotes a build-time-only secret that should not end up in the final image
 

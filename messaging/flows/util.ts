@@ -49,7 +49,8 @@ export const sendEmail = (
   console.log(`Sending email to ${to}...`);
 
   return SES_CLIENT.send(new SendEmailCommand({
-    Source: expectEnv('EMAIL_SOURCE_ADDRESS'),
+    ConfigurationSetName: expectEnv('SES_CONFIG_SET'),
+    Source: expectEnv('SES_SOURCE_IDENTITY'),
     Destination: { ToAddresses: [to] },
     Message: {
       Subject: { Data: subject, Charset: 'UTF-8' },
