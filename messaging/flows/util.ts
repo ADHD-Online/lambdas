@@ -4,6 +4,10 @@ import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { ConfigTableData } from '@adhd-online/unified-types/messaging';
 
+const EMAIL_HARD_LIMIT_BYTES = 10_000_000; // 10MB
+const SMS_SOFT_LIMIT_BYTES = 140;
+const SMS_HARD_LIMIT_BYTES = 1600;
+
 const DYNAMO_CLIENT = new DynamoDBClient({});
 const SES_CLIENT = new SESClient({});
 const SNS_CLIENT = new SNSClient({ region: 'us-east-1' });
@@ -40,9 +44,10 @@ export const sendEmail = (
 ) => {
   const len = ENCODER.encode(message).length;
 
-  if (len > 10_000_000) {
+  if (len > EMAIL_HARD_LIMIT_BYTES) {
+    const mb = EMAIL_HARD_LIMIT_BYTES / 1_000_000;
     throw new Error(
-      `Message of length ${len} bytes is longer than 10MB AWS SNS hard limit`
+      `Message of length ${len} bytes is longer than ${mb}MB AWS SNS hard limit`
     );
   }
 
@@ -62,16 +67,16 @@ export const sendEmail = (
 export const sendSms = (to: string, message: string) => {
   const len = ENCODER.encode(message).length;
 
-  if (len > 1600) {
+  if (len > SMS_HARD_LIMIT_BYTES) {
     throw new Error(
-      `Message of length ${len} bytes is longer than 1600-byte AWS SNS` +
+      `Message of length ${len} bytes is longer than ${SMS_HARD_LIMIT_BYTES}-byte AWS SNS` +
       'hard limit'
     );
-  } else if (len > 140) {
+  } else if (len > SMS_SOFT_LIMIT_BYTES) {
     console.warn(
-      `Message of length ${len} bytes is longer than 140-byte SMS ` +
+      `Message of length ${len} bytes is longer than ${SMS_SOFT_LIMIT_BYTES}-byte SMS ` +
       'message limit; will be split into approximately ' +
-      `${Math.ceil(len / 140)} SMS messages`
+      `${Math.ceil(len / SMS_SOFT_LIMIT_BYTES)} SMS messages`
     );
   }
 
