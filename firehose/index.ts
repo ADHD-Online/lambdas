@@ -71,7 +71,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
   const dataset = new BigQuery({
     projectId: expectEnv('GCP_PROJECT_ID'),
-    keyFilename: path.join(__dirname, `gcp_keyfile/${expectEnv('STAGE')}.json`),
+    keyFilename: path.join(__dirname, `gcp_keyfile/${STAGE}.json`),
   })
     .dataset(expectEnv('GCP_DATASET_ID'))
   ;
