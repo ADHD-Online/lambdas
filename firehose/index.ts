@@ -6,6 +6,12 @@ import { expectEnv, genSchema } from './util';
 
 const STAGE = expectEnv('STAGE');
 
+const debug = (...args: any[]) => {
+  if (STAGE !== 'prod') {
+    console.log(...args);
+  }
+};
+
 const recordToTableName = (record: StreamRecord) => {
   const { pk, sk } = record.Keys;
 
@@ -89,6 +95,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
         tableClients[tableName] = dataset.table(tableName);
 
         if (!(await tableClients[tableName].exists())) {
+          console.warn(`Creating nonexistent table '${tableName}'...`);
           await dataset.createTable(tableName, {});
         }
       }
@@ -110,6 +117,14 @@ export const handler = async (event: DynamoDBStreamEvent) => {
         // validate for errors
         Schema.parse(schema);
       }
+
+      debug(
+        'Inserting into',
+        ` ${expectEnv('GCP_PROJECT_ID')}`,
+        `/${expectEnv('GCP_DATASET_ID')}`,
+        `/${tableName}: `,
+        recordWithMeta,
+      );
 
       tableQueue.push([recordWithMeta, { schema }]);
     }
