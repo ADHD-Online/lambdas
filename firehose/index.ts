@@ -7,9 +7,7 @@ import { expectEnv, genSchema } from './util';
 const STAGE = expectEnv('STAGE');
 
 const debug = (...args: any[]) => {
-  if (STAGE !== 'prod') {
-    console.log(...args);
-  }
+  if (STAGE !== 'prod') { console.log(...args); }
 };
 
 const recordToTableName = (record: StreamRecord) => {
