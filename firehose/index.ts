@@ -33,7 +33,7 @@ const recordToTableName = (record: StreamRecord) => {
   const pkPrefix = pk.S.split('#')[0];
   const skSplit  = sk.S.split('#');
   const skPrefix = skSplit[0];
-  const skSuffix = skSplit.at(-1);
+  const skSuffix = skSplit[skSplit.length - 1];
   const skType   = skSplit[1];
 
   switch ([pkPrefix, skPrefix, skSuffix]) {
