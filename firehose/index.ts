@@ -37,18 +37,25 @@ const recordToTableName = (record: StreamRecord) => {
   const skType   = skSplit[1];
   const jst = JSON.stringify;
 
-  switch (jst([pkPrefix, skPrefix, skSuffix])) {
+  debug(`--> Coords retrieved: [${pkPrefix}, ${skPrefix}, ${skSuffix}]`);
+
+  switch (jst([pkPrefix, skPrefix])) {
     case jst(['patient', 'appointment']):
       return 'appointments';
 
-    case jst(['patient', 'assessment', 'definition']):
-      return `assessment_${skType}_definitions`;
+    case jst(['patient', 'assessment']):
+      if (skSuffix === 'definition')
+        return `assessment_${skType}_definitions`;
 
-    case jst(['patient', 'assessment', 'inFlight']):
-      return `assessment_${skType}_inflights`;
+      else if (skSuffix === 'inFlight')
+        return `assessment_${skType}_inflights`;
 
-    case jst(['patient', 'assessment', 'result']):
-      return `assessment_${skType}_results`;
+      else if (skSuffix === 'result')
+        return `assessment_${skType}_results`;
+
+      else
+        console.error('Could not classify record:', record);
+        throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
 
     case jst(['patient', 'journey']):
       return 'journeys';
