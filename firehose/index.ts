@@ -35,30 +35,31 @@ const recordToTableName = (record: StreamRecord) => {
   const skPrefix = skSplit[0];
   const skSuffix = skSplit[skSplit.length - 1];
   const skType   = skSplit[1];
+  const jst = JSON.stringify;
 
-  switch ([pkPrefix, skPrefix, skSuffix]) {
-    case ['patient', 'appointment']:
+  switch (jst([pkPrefix, skPrefix, skSuffix])) {
+    case jst(['patient', 'appointment']):
       return 'appointments';
 
-    case ['patient', 'assessment', 'definition']:
+    case jst(['patient', 'assessment', 'definition']):
       return `assessment_${skType}_definitions`;
 
-    case ['patient', 'assessment', 'inFlight']:
+    case jst(['patient', 'assessment', 'inFlight']):
       return `assessment_${skType}_inflights`;
 
-    case ['patient', 'assessment', 'result']:
+    case jst(['patient', 'assessment', 'result']):
       return `assessment_${skType}_results`;
 
-    case ['patient', 'journey']:
+    case jst(['patient', 'journey']):
       return 'journeys';
 
-    case ['userProfile', 'patientGoalsDef']:
+    case jst(['userProfile', 'patientGoalsDef']):
       return 'patientgoalsdefs';
 
-    case ['userProfile', 'patient']:
+    case jst(['userProfile', 'patient']):
       return 'patients';
 
-    case ['userProfile', 'userProfile']:
+    case jst(['userProfile', 'userProfile']):
       return 'userprofiles';
 
     default:
