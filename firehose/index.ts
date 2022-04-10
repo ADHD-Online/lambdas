@@ -1,7 +1,10 @@
 import path from 'path';
 import { BigQuery } from '@google-cloud/bigquery';
-//import { DynamoDBStreamEvent, StreamRecord } from '@adhd-online/unified-types/external/dynamodb/events';
-//import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
+import {
+  DynamoDBStreamEvent,
+  StreamRecord,
+  TableFieldSchema as Schema,
+} from './types';
 import { expectEnv, genSchema } from './util';
 
 const STAGE = expectEnv('STAGE');
@@ -10,7 +13,7 @@ const debug = (...args: any[]) => {
   if (STAGE !== 'prod') { console.log(...args); }
 };
 
-const recordToTableName = (record: any) => {
+const recordToTableName = (record: StreamRecord) => {
   const { pk, sk } = record.Keys;
 
   if (!pk || !sk) {
@@ -64,13 +67,12 @@ const recordToTableName = (record: any) => {
   }
 };
 
-export const handler = async (event: any) => {
+export const handler = async (event: DynamoDBStreamEvent) => {
   if (STAGE !== 'prod') {
     // validate for errors
-    //DynamoDBStreamEvent.parse(event);
+    DynamoDBStreamEvent.parse(event);
 
-    const rowCount = event.Records.reduce((a, rec) => a + rec.dynamodb.length, 0);
-    console.log(`Received ${rowCount} rows for ingestion`);
+    console.log(`Received ${event.Records.length} rows for ingestion`);
   }
 
   const dataset = new BigQuery({
@@ -85,47 +87,46 @@ export const handler = async (event: any) => {
 
   // sort rows for ingestion
   for (const eventRecord of event.Records) {
-    for (const streamRecord of eventRecord.dynamodb) {
-      const tableName = recordToTableName(streamRecord);
+    const streamRecord = eventRecord.dynamodb;
+    const tableName = recordToTableName(streamRecord);
 
-      // create (client for) table, if it hasn't been made yet
-      if (!(tableName in tableClients)) {
-        tableClients[tableName] = dataset.table(tableName);
+    // create (client for) table, if it hasn't been made yet
+    if (!(tableName in tableClients)) {
+      tableClients[tableName] = dataset.table(tableName);
 
-        if (!(await tableClients[tableName].exists())) {
-          console.warn(`Creating nonexistent table '${tableName}'...`);
-          await dataset.createTable(tableName, {});
-        }
+      if (!(await tableClients[tableName].exists())) {
+        console.warn(`Creating nonexistent table '${tableName}'...`);
+        await dataset.createTable(tableName, {});
       }
-
-      // retrieve queue for table, or create one if it dosn't exist
-      let tableQueue = tableQueues[tableName] = tableQueues[tableName] ?? [];
-
-      const recordWithMeta = {
-        Item: streamRecord.NewImage,
-        Metadata: {
-          eventKind: eventRecord.eventName,
-          timestamp: streamRecord.ApproximateCreationDateTime,
-        },
-      };
-
-      const schema = genSchema(['Item', recordWithMeta]);
-
-      if (STAGE !== 'prod') {
-        // validate for errors
-        //Schema.parse(schema);
-      }
-
-      debug(
-        'Inserting into',
-        ` ${expectEnv('GCP_PROJECT_ID')}`,
-        `/${expectEnv('GCP_DATASET_ID')}`,
-        `/${tableName}: `,
-        recordWithMeta,
-      );
-
-      tableQueue.push([recordWithMeta, { schema }]);
     }
+
+    // retrieve queue for table, or create one if it dosn't exist
+    let tableQueue = tableQueues[tableName] = tableQueues[tableName] ?? [];
+
+    const recordWithMeta = {
+      Item: streamRecord.NewImage,
+      Metadata: {
+        eventKind: eventRecord.eventName,
+        timestamp: streamRecord.ApproximateCreationDateTime,
+      },
+    };
+
+    const schema = genSchema(['Item', recordWithMeta]);
+
+    if (STAGE !== 'prod') {
+      // validate for errors
+      Schema.parse(schema);
+    }
+
+    debug(
+      'Inserting into',
+      ` ${expectEnv('GCP_PROJECT_ID')}`,
+      `/${expectEnv('GCP_DATASET_ID')}`,
+      `/${tableName}: `,
+      recordWithMeta,
+    );
+
+    tableQueue.push([recordWithMeta, { schema }]);
   }
 
   // ingest
