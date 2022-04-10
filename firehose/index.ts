@@ -1,7 +1,7 @@
 import path from 'path';
 import { BigQuery } from '@google-cloud/bigquery';
-import { DynamoDBStreamEvent, StreamRecord } from '@adhd-online/unified-types/external/dynamodb/events';
-import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
+//import { DynamoDBStreamEvent, StreamRecord } from '@adhd-online/unified-types/external/dynamodb/events';
+//import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
 import { expectEnv, genSchema } from './util';
 
 const STAGE = expectEnv('STAGE');
@@ -10,7 +10,7 @@ const debug = (...args: any[]) => {
   if (STAGE !== 'prod') { console.log(...args); }
 };
 
-const recordToTableName = (record: StreamRecord) => {
+const recordToTableName = (record: any) => {
   const { pk, sk } = record.Keys;
 
   if (!pk || !sk) {
@@ -64,10 +64,10 @@ const recordToTableName = (record: StreamRecord) => {
   }
 };
 
-export const handler = async (event: DynamoDBStreamEvent) => {
+export const handler = async (event: any) => {
   if (STAGE !== 'prod') {
     // validate for errors
-    DynamoDBStreamEvent.parse(event);
+    //DynamoDBStreamEvent.parse(event);
 
     const rowCount = event.Records.reduce((a, rec) => a + rec.dynamodb.length, 0);
     console.log(`Received ${rowCount} rows for ingestion`);
@@ -113,7 +113,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
       if (STAGE !== 'prod') {
         // validate for errors
-        Schema.parse(schema);
+        //Schema.parse(schema);
       }
 
       debug(
