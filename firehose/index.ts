@@ -1,4 +1,5 @@
 import path from 'path';
+import util from 'util';
 import { BigQuery, Table } from '@google-cloud/bigquery';
 import {
   DynamoDBStreamEvent,
@@ -121,7 +122,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     if (!('schema' in table)) {
       table.schema = genSchema(recordWithMeta);
 
-      debug(`Generated schema for ${tableName}:`, table.schema);
+      debug(`Generated schema for ${tableName}:`, util.inspect(table.schema));
 
       // validate for errors
       if (STAGE !== 'prod') {
@@ -136,7 +137,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       ` ${expectEnv('GCP_PROJECT_ID')}` +
       `/${expectEnv('GCP_DATASET_ID')}` +
       `/${tableName}:`,
-      recordWithMeta,
+      util.inspect(recordWithMeta),
     );
 
     table.queue.push(recordWithMeta);
