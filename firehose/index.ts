@@ -90,15 +90,23 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     .dataset(expectEnv('GCP_DATASET_ID'))
   ;
 
-  const tableClients: Record<string, Table> = {};
+  const tables: Record<string, {
+    client: Table,
+    queue: any[],
+    schema?: Schema,
+  }> = {};
+
+  // populate tables object
   for (const table of (await dataset.getTables()).flat()) {
     if (!(table instanceof Table)) {
       throw new Error(`Expected table obj to be a Table, but it's a ${table.constructor.name}`);
     }
-    tableClients[table.id] = table;
-  }
 
-  const tableQueues = {};
+    tables[table.id] = {
+      client: table,
+      queue: [],
+    };
+  }
 
   // sort rows for ingestion
   for (const eventRecord of event.Records) {
@@ -106,13 +114,18 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     const tableName = recordToTableName(streamRecord);
 
     // create (client for) table, if it hasn't been made yet
-    if (!(tableName in tableClients)) {
+    /* (possibly not necessary)
+    if (!(tableName in tables)) {
       console.warn(`Creating nonexistent table '${tableName}'...`);
-      tableClients[tableName] = (await dataset.createTable(tableName, {}))[0];
-    }
 
-    // retrieve queue for table, or create one if it dosn't exist
-    let tableQueue = tableQueues[tableName] = tableQueues[tableName] ?? [];
+      tables[tableName] = {
+        client: (await dataset.createTable(tableName, {}))[0],
+        queue: [],
+      };
+    }
+    */
+
+    const table = tables[tableName];
 
     const recordWithMeta = {
       Item: streamRecord.NewImage,
@@ -122,11 +135,13 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       },
     };
 
-    const schema = genSchema(['Item', recordWithMeta]);
+    if (!('schema' in table)) {
+      table.schema = genSchema(['Row', recordWithMeta]);
 
-    if (STAGE !== 'prod') {
-      // validate for errors
-      Schema.parse(schema);
+      if (STAGE !== 'prod') {
+        // validate for errors
+        Schema.parse(table.schema);
+      }
     }
 
     debug(
@@ -137,22 +152,21 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       recordWithMeta,
     );
 
-    tableQueue.push([recordWithMeta, { schema }]);
+    table.queue.push(recordWithMeta);
   }
 
   // ingest
   const promises = [];
-  for (const tableName of Object.keys(tableClients)) {
-    console.log(`Begin bulk ingest for ${tableName}`);
-    const [record, schema] = tableQueues[tableName];
-    promises.push(tableClients[tableName].insert(record, schema));
+  for (const [name, table] of Object.entries(tables)) {
+    console.log(`Begin bulk ingest for ${name}`);
+    promises.push(table.client.insert(table.queue, { schema: table.schema }));
   }
 
   await Promise.all(promises)
     .catch(reason => console.error('Failed to insert:', reason))
   ;
 
-  const count = Object.values(tableQueues).reduce((a: number, q: any[]) => a + q.length, 0);
+  const count = Object.values(tables).reduce((a, table) => a + table.queue.length, 0);
   console.log(`Successfully ingested ${count} rows`);
 }
 
