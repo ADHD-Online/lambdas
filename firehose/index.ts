@@ -127,10 +127,10 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     }
 
     debug(
-      'Inserting into',
-      ` ${expectEnv('GCP_PROJECT_ID')}`,
-      `/${expectEnv('GCP_DATASET_ID')}`,
-      `/${tableName}: `,
+      'Inserting into' +
+      ` ${expectEnv('GCP_PROJECT_ID')}` +
+      `/${expectEnv('GCP_DATASET_ID')}` +
+      `/${tableName}:`,
       recordWithMeta,
     );
 
