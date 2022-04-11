@@ -152,9 +152,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     promises.push(table.client.insert(table.queue, { schema: table.schema }));
   }
 
-  await Promise.all(promises)
-    .catch(reason => console.error('Failed to insert:', reason))
-  ;
+  await Promise.all(promises);
 
   const count = Object.values(tables).reduce((a, table) => a + table.queue.length, 0);
   console.log(`Successfully ingested ${count} rows`);
