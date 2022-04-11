@@ -1,5 +1,5 @@
 import path from 'path';
-import { BigQuery } from '@google-cloud/bigquery';
+import { BigQuery, Table } from '@google-cloud/bigquery';
 import {
   DynamoDBStreamEvent,
   StreamRecord,
@@ -90,7 +90,14 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     .dataset(expectEnv('GCP_DATASET_ID'))
   ;
 
-  const tableClients = {};
+  const tableClients: Record<string, Table> = {};
+  for (const table of (await dataset.getTables()).flat()) {
+    if (!(table instanceof Table)) {
+      throw new Error(`Expected table obj to be a Table, but it's a ${table.constructor.name}`);
+    }
+    tableClients[table.id] = table;
+  }
+
   const tableQueues = {};
 
   // sort rows for ingestion
@@ -100,12 +107,8 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
     // create (client for) table, if it hasn't been made yet
     if (!(tableName in tableClients)) {
-      tableClients[tableName] = dataset.table(tableName);
-
-      if (!(await tableClients[tableName].exists())) {
-        console.warn(`Creating nonexistent table '${tableName}'...`);
-        await dataset.createTable(tableName, {});
-      }
+      console.warn(`Creating nonexistent table '${tableName}'...`);
+      tableClients[tableName] = (await dataset.createTable(tableName, {}))[0];
     }
 
     // retrieve queue for table, or create one if it dosn't exist
@@ -140,7 +143,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
   // ingest
   const promises = [];
   for (const tableName of Object.keys(tableClients)) {
-    promises.push(tableClients[tableName].insert(...tableQueues[tableName]));
+    promises.push(tableClients[tableName].insert(tableQueues[tableName]));
   }
 
   await Promise.all(promises);
