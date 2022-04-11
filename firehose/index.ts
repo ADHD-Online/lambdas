@@ -93,7 +93,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
   const tables: Record<string, {
     client: Table,
     queue: any[],
-    schema?: Schema,
+    schema?: Schema[],
   }> = {};
 
   // populate tables object
@@ -124,11 +124,15 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     };
 
     if (!('schema' in table)) {
-      table.schema = genSchema(['Row', recordWithMeta]);
+      table.schema = genSchema(recordWithMeta);
 
+      debug(`Generated schema for ${tableName}:`, table.schema);
+
+      // validate for errors
       if (STAGE !== 'prod') {
-        // validate for errors
-        Schema.parse(table.schema);
+        for (const s of table.schema) {
+          Schema.parse(s);
+        }
       }
     }
 

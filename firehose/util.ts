@@ -7,7 +7,9 @@ export const expectEnv = (key: string, message?: string) => {
   return val;
 };
 
-export const genSchema = <T>([name, thing]: [string, T]): Schema => {
+export const genSchema = <T>(thing: T): Schema[] => Object.entries(thing).map(genSchemaHelper);
+
+const genSchemaHelper = <T>([name, thing]: [string, T]): Schema => {
   switch (typeof thing) {
     case 'object':
       // in js, `typeof null` returns 'object'
@@ -20,7 +22,7 @@ export const genSchema = <T>([name, thing]: [string, T]): Schema => {
         name,
         type: 'RECORD',
         mode: Array.isArray(thing) ? 'REPEATED' : undefined,
-        fields: Object.entries(thing).flatMap(genSchema),
+        fields: Object.entries(thing).flatMap(genSchemaHelper),
       };
     case 'boolean':
       return {
