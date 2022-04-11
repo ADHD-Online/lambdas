@@ -158,6 +158,9 @@ export const handler = async (event: DynamoDBStreamEvent) => {
   // ingest
   const promises = [];
   for (const [name, table] of Object.entries(tables)) {
+    if (table.queue.length <= 0)
+      continue;
+
     console.log(`Begin bulk ingest for ${name}`);
     promises.push(table.client.insert(table.queue, { schema: table.schema }));
   }
