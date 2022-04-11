@@ -113,18 +113,6 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     const streamRecord = eventRecord.dynamodb;
     const tableName = recordToTableName(streamRecord);
 
-    // create (client for) table, if it hasn't been made yet
-    /* (possibly not necessary)
-    if (!(tableName in tables)) {
-      console.warn(`Creating nonexistent table '${tableName}'...`);
-
-      tables[tableName] = {
-        client: (await dataset.createTable(tableName, {}))[0],
-        queue: [],
-      };
-    }
-    */
-
     const table = tables[tableName];
 
     const recordWithMeta = {
