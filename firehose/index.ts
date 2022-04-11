@@ -96,22 +96,17 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     schema?: Schema[],
   }> = {};
 
-  // populate tables object
-  for (const table of (await dataset.getTables()).flat()) {
-    if (!(table instanceof Table)) {
-      throw new Error(`Expected table obj to be a Table, but it's a ${table.constructor.name}`);
-    }
-
-    tables[table.id] = {
-      client: table,
-      queue: [],
-    };
-  }
-
   // sort rows for ingestion
   for (const eventRecord of event.Records) {
     const streamRecord = eventRecord.dynamodb;
     const tableName = recordToTableName(streamRecord);
+
+    if (!(tableName in tables)) {
+      tables[tableName] = {
+        client: dataset.table(tableName),
+        queue: [],
+      };
+    }
 
     const table = tables[tableName];
 

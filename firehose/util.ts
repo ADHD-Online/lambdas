@@ -1,4 +1,4 @@
-import { TableFieldSchema as Schema } from '@adhd-online/unified-types/external/bigquery/table';
+import { TableFieldSchema as Schema } from './types';
 
 export const expectEnv = (key: string, message?: string) => {
   const val = process.env[key];
