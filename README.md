@@ -34,11 +34,8 @@ The following env variables are expected by the projects in here:
 | Variable         | Description
 | ---------------- | -----------
 | `STAGE`          | Stage of deployment (such as edge, uat, or prod)
-| `NPM_TOKEN`\*    | Token that can read the ADO npm package registry on Github
 | `GCP_PROJECT_ID` | ID of the data lake project in gcp
 | `GCP_DATASET_ID` | ID of the data lake dataset in gcp
-
-\* Denotes a build-time-only secret that should not end up in the final image
 
 ### Messaging
 
