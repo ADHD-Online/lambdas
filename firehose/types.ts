@@ -10,8 +10,8 @@ export type AttributeValue =
   { BOOL: boolean                        } |
   { L:    AttributeValue[]               } |
   { M:    Record<string, AttributeValue> } |
-  { N:    string                         } |
-  { NS:   string[]                       } |
+  { N:    number                         } |
+  { NS:   number[]                       } |
   { NULL: boolean                        } |
   { S:    string                         } |
   { SS:   string[]                       }
@@ -24,8 +24,8 @@ export const AttributeValue: z.ZodType<AttributeValue> = z.lazy(() =>
     z.object({ BOOL: z.boolean()                          }),
     z.object({ L:    AttributeValue.array()               }),
     z.object({ M:    z.record(z.string(), AttributeValue) }),
-    z.object({ N:    z.string()                           }),
-    z.object({ NS:   z.string().array()                   }),
+    z.object({ N:    z.number()                           }),
+    z.object({ NS:   z.number().array()                   }),
     z.object({ NULL: z.boolean()                          }),
     z.object({ S:    z.string()                           }),
     z.object({ SS:   z.string().array()                   }),
