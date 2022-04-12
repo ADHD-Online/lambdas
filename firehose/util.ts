@@ -18,32 +18,32 @@ const genSchemaHelper = <T>([name, thing]: [string, T]): Schema => {
         throw new Error(`Can't generate schema for a 'null'`);
       }
 
-      return {
-        name,
-        type: 'RECORD',
-        mode: Array.isArray(thing) ? 'REPEATED' : undefined,
-        fields: Object.entries(thing).flatMap(genSchemaHelper),
-      };
+      let fields: Schema[], mode: 'REPEATED' | undefined;
+      // if it's an array, add all possible fields
+      if (Array.isArray(thing)) {
+        fields = thing
+          .map(t => genSchemaHelper(['unwrap_me', t]))
+          .flatMap(t => t.fields)
+        ;
+        mode = 'REPEATED';
+      } else {
+        fields = Object.entries(thing).map(genSchemaHelper);
+        mode = undefined;
+      }
+      return { name, type: 'RECORD', mode, fields };
+
     case 'boolean':
-      return {
-        name,
-        type: 'BOOLEAN',
-      };
+      return { name, type: 'BOOLEAN' };
+
     case 'number':
-      return {
-        name,
-        type: 'NUMERIC',
-      };
+      return { name, type: 'NUMERIC' };
+
     case 'bigint':
-      return {
-        name,
-        type: 'BIGNUMERIC',
-      };
+      return { name, type: 'BIGNUMERIC' };
+
     case 'string':
-      return {
-        name,
-        type: 'STRING',
-      };
+      return { name, type: 'STRING' };
+
     case 'function':
     case 'symbol':
     case 'undefined':
