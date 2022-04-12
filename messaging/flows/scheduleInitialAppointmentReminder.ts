@@ -1,7 +1,7 @@
 import Mustache from 'mustache';
 import {
   ScheduleInitialAppointmentReminderViewResult as ViewResult,
-} from '@adhd-online/unified-types/messaging';
+} from './types';
 import { fetchConfig, sendEmail, sendSms } from './util';
 
 export const FLOW_KEY = 'messaging#ScheduleInitialAppointmentReminder';

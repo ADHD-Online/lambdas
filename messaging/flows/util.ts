@@ -20,7 +20,7 @@ export const expectEnv = (key: string, message?: string) => {
   return val;
 };
 
-const STAGE = expectEnv('STAGE');
+export const STAGE = expectEnv('STAGE');
 
 export const fetchConfig = async (flowKey: string) => {
   const res = await DYNAMO_CLIENT.send(new GetItemCommand({

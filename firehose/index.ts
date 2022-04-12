@@ -1,6 +1,7 @@
 import path from 'path';
 import util from 'util';
 import { BigQuery, Table } from '@google-cloud/bigquery';
+import generator from 'bigquery-schema-generator';
 import {
   DynamoDBStreamEvent,
   StreamRecord,
@@ -124,7 +125,8 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     };
 
     if (!('schema' in table)) {
-      table.schema = genSchema(recordWithMeta);
+      //table.schema = genSchema(recordWithMeta);
+      table.schema = generator(recordWithMeta);
 
       debug(`Generated schema for ${tableName}:`, util.inspect(table.schema, false, null));
 
