@@ -14,6 +14,10 @@ const debug = (...args: any[]) => {
   if (STAGE !== 'prod') { console.log(...args); }
 };
 
+const debugError = (...args: any[]) => {
+  if (STAGE !== 'prod') { console.error(...args); }
+};
+
 const recordToTableName = (record: StreamRecord) => {
   const { pk, sk } = record.Keys;
 
@@ -55,7 +59,7 @@ const recordToTableName = (record: StreamRecord) => {
         return `assessment_${skType}_results`;
 
       else
-        console.error('Could not classify record:', record);
+        debugError('Could not classify record:', util.inspect(record, false, null));
         throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
 
     case jst(['patient', 'journey']):
@@ -71,7 +75,7 @@ const recordToTableName = (record: StreamRecord) => {
       return 'userprofiles';
 
     default:
-      console.error('Could not classify record:', record);
+      debugError('Could not classify record:', util.inspect(record, false, null));
       throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
   }
 };
