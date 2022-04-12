@@ -1,11 +1,10 @@
 import path from 'path';
 import util from 'util';
 import { BigQuery, Table } from '@google-cloud/bigquery';
-import generator from 'bigquery-schema-generator';
 import {
   DynamoDBStreamEvent,
+  Schema,
   StreamRecord,
-  TableFieldSchema as Schema,
 } from './types';
 import { expectEnv, genSchema } from './util';
 
@@ -125,8 +124,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     };
 
     if (!('schema' in table)) {
-      //table.schema = genSchema(recordWithMeta);
-      table.schema = generator(recordWithMeta);
+      table.schema = genSchema(recordWithMeta);
 
       debug(`Generated schema for ${tableName}:`, util.inspect(table.schema, false, null));
 
@@ -157,7 +155,6 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
     console.log(`Begin bulk ingest for ${name}`);
     promises.push(table.client.insert(table.queue, {
-      ignoreUnknownValues: true,
       schema: table.schema,
     }));
   }

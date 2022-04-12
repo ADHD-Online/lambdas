@@ -72,25 +72,31 @@ export const DynamoDBStreamEvent = z.object({ Records: DynamoDBRecord.array() })
 export type DynamoDBStreamEvent = z.infer<typeof DynamoDBStreamEvent>;
 
 // https://cloud.google.com/bigquery/docs/reference/rest/v2/tables
-export type TableFieldSchema = {
+export const SchemaType = z.enum([
+  'BIGNUMERIC',
+  'BOOLEAN', 'BOOL',
+  'BYTES',
+  'DATE',
+  'DATETIME',
+  'FLOAT', 'FLOAT64',
+  'GEOGRAPHY',
+  'INTEGER', 'INT64',
+  'NUMERIC',
+  'RECORD', 'STRUCT',
+  'STRING',
+  'TIME',
+  'TIMESTAMP',
+]);
+export type SchemaType = z.infer<typeof SchemaType>;
+
+export const SchemaMode = z.enum(['NULLABLE', 'REPEATED', 'REQUIRED']);
+export type SchemaMode = z.infer<typeof SchemaMode>;
+
+export type Schema = {
   name: string;
-  type?:
-    'BIGNUMERIC' |
-    'BOOLEAN'    | 'BOOL'    |
-    'BYTES'      |
-    'DATE'       |
-    'DATETIME'   |
-    'FLOAT'      | 'FLOAT64' |
-    'GEOGRAPHY'  |
-    'INTEGER'    | 'INT64'   |
-    'NUMERIC'    |
-    'RECORD'     | 'STRUCT'  |
-    'STRING'     |
-    'TIME'       |
-    'TIMESTAMP'
-  ;
-  mode?: 'NULLABLE' | 'REPEATED' | 'REQUIRED';
-  fields?: TableFieldSchema[];
+  type?: SchemaType;
+  mode?: SchemaMode;
+  fields?: Schema[];
   description?: string;
   policyTags?: { names: string[] };
   maxLength?: number;
@@ -98,25 +104,11 @@ export type TableFieldSchema = {
   scale?: number;
 };
 //@ts-ignore
-export const TableFieldSchema: z.ZodType<TableFieldSchema> = z.lazy(() => z.object({
+export const Schema: z.ZodType<Schema> = z.lazy(() => z.object({
   name: z.string(),
-  type: z.enum([
-    'STRING',
-    'BYTES',
-    'INTEGER',    'INT64',
-    'FLOAT',      'FLOAT64',
-    'BOOLEAN',    'BOOL',
-    'TIMESTAMP',
-    'DATE',
-    'TIME',
-    'DATETIME',
-    'GEOGRAPHY',
-    'NUMERIC',
-    'BIGNUMERIC',
-    'RECORD',     'STRUCT',
-  ]),
-  mode: z.enum(['NULLABLE', 'REPEATED', 'REQUIRED']).optional(),
-  fields: TableFieldSchema.array().optional(),
+  type: SchemaType.optional(),
+  mode: SchemaMode.optional(),
+  fields: Schema.array().optional(),
   description: z.string().optional(),
   policyTags: z.object({ names: z.string().array() }).optional(),
   maxLength: z.number().optional(),

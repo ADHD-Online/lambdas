@@ -1,4 +1,8 @@
-import { TableFieldSchema as Schema } from './types';
+import {
+  Schema,
+  SchemaMode,
+  SchemaType,
+} from './types';
 
 export const expectEnv = (key: string, message?: string) => {
   const val = process.env[key];
@@ -7,48 +11,45 @@ export const expectEnv = (key: string, message?: string) => {
   return val;
 };
 
-export const genSchema = <T>(thing: T): Schema[] => Object.entries(thing).map(genSchemaHelper);
-
-const genSchemaHelper = <T>([name, thing]: [string, T]): Schema => {
-  switch (typeof thing) {
-    case 'object':
-      // in js, `typeof null` returns 'object'
-      // this is a historical language bug that may never be fixed
-      if (thing === null) {
-        throw new Error(`Can't generate schema for a 'null'`);
-      }
-
-      let fields: Schema[], mode: 'REPEATED' | undefined;
-      // if it's an array, add all possible fields
-      if (Array.isArray(thing)) {
-        fields = thing
-          .map(t => genSchemaHelper(['unwrap_me', t]))
-          .flatMap(t => t.fields)
-        ;
-        mode = 'REPEATED';
-      } else {
-        fields = Object.entries(thing).map(genSchemaHelper);
-        mode = undefined;
-      }
-      return { name, type: 'RECORD', mode, fields };
-
-    case 'boolean':
-      return { name, type: 'BOOLEAN' };
-
-    case 'number':
-      return { name, type: 'NUMERIC' };
-
+export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k, v]) => {
+  switch (typeof v) {
     case 'bigint':
-      return { name, type: 'BIGNUMERIC' };
-
-    case 'string':
-      return { name, type: 'STRING' };
-
     case 'function':
     case 'symbol':
     case 'undefined':
-    default:
-      throw new Error(`Can't generate schema for a(n) '${typeof thing}'`);
-  };
-};
+      throw new Error(`Can't generate schema for a '${typeof v}'`);
+
+    case 'object':
+      // in js, `typeof null` returns 'object'
+      // this is a historical language bug that may never be fixed
+      if (v === null) {
+        throw new Error(`Can't generate schema for a 'null'`);
+      } else if (Array.isArray(v)) {
+        return {
+          name: k,
+          type: 'RECORD',
+          mode: 'REPEATED',
+          fields: v.flatMap(genSchema),
+        };
+      } else {
+        return {
+          name: k,
+          type: 'RECORD',
+          fields: genSchema(v),
+        };
+      }
+
+    case 'number':
+      return {
+        name: k,
+        type: Number.isInteger(v) ? 'INTEGER' : 'FLOAT',
+      };
+
+    case 'boolean':
+      return { name: k, type: 'BOOLEAN' };
+
+    case 'string':
+      return { name: k, type: 'STRING' };
+  }
+});
 
