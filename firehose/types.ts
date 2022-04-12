@@ -34,20 +34,20 @@ export const AttributeValue: z.ZodType<AttributeValue> = z.lazy(() =>
 
 // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_StreamRecord.html
 
-const StreamRecordBase = z.object({
+export const StreamRecord = z.object({
   ApproximateCreationDateTime: z.number(),
   Keys: z.record(z.string(), AttributeValue),
   NewImage: z.record(z.string(), AttributeValue).optional(),
   OldImage: z.record(z.string(), AttributeValue).optional(),
   SequenceNumber: z.string(),
   SizeBytes: z.number(),
+  StreamViewType: z.enum([
+    'KEYS_ONLY',
+    'NEW_IMAGE',
+    'OLD_IMAGE',
+    'NEW_AND_OLD_IMAGES',
+  ]),
 });
-export const StreamRecord = z.union([
-  StreamRecordBase.extend({ StreamViewType: z.literal('KEYS_ONLY') }),
-  StreamRecordBase.extend({ StreamViewType: z.literal('NEW_IMAGE') }),
-  StreamRecordBase.extend({ StreamViewType: z.literal('OLD_IMAGE') }),
-  StreamRecordBase.extend({ StreamViewType: z.literal('NEW_AND_OLD_IMAGES') }),
-]);
 export type StreamRecord = z.infer<typeof StreamRecord>;
 
 // https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_streams_Record.html
