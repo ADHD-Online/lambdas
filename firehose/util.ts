@@ -53,3 +53,21 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
   }
 });
 
+export const deduplicateFields = (schema: Schema[]) => {
+  const model: Record<string, true> = {};
+
+  const dedupHelper = (fields: Schema[], path: string) => fields.filter(field => {
+    const subpath = path + '.' + field.name;
+    if (subpath in model) {
+      return false; // found a duplicate
+    } else {
+      model[subpath] = true;
+      if ('fields' in field)
+        field.fields = dedupHelper(field.fields, subpath);
+      return true;
+    }
+  });
+
+  return dedupHelper(schema, '');
+};
+

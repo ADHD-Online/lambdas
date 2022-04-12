@@ -6,7 +6,7 @@ import {
   Schema,
   StreamRecord,
 } from './types';
-import { expectEnv, genSchema } from './util';
+import { deduplicateFields, expectEnv, genSchema } from './util';
 
 const STAGE = expectEnv('STAGE');
 
@@ -124,7 +124,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     };
 
     if (!('schema' in table)) {
-      table.schema = genSchema(recordWithMeta);
+      table.schema = deduplicateFields(genSchema(recordWithMeta));
 
       debug(`Generated schema for ${tableName}:`, util.inspect(table.schema, false, null));
 
@@ -155,6 +155,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
     console.log(`Begin bulk ingest for ${name}`);
     promises.push(table.client.insert(table.queue, {
+      ignoreUnknownValues: true,
       schema: table.schema,
     }));
   }
