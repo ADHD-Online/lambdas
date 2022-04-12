@@ -116,7 +116,9 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     const table = tables[tableName];
 
     const recordWithMeta = {
-      Item: streamRecord.NewImage,
+      Keys: streamRecord.Keys,
+      NewImage: streamRecord.NewImage,
+      OldImage: streamRecord.OldImage,
       Metadata: {
         eventKind: eventRecord.eventName,
         timestamp: streamRecord.ApproximateCreationDateTime,
