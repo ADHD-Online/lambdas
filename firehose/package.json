@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@google-cloud/bigquery": "^5.11.0",
-    "bigquery-schema-generator": "^1.0.0"
+    "bigquery-schema-generator": "^1.0.0",
+    "zod": "^3.14.4"
   }
 }
