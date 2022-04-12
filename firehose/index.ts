@@ -122,7 +122,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     if (!('schema' in table)) {
       table.schema = genSchema(recordWithMeta);
 
-      debug(`Generated schema for ${tableName}:`, util.inspect(table.schema));
+      debug(`Generated schema for ${tableName}:`, util.inspect(table.schema, false, null));
 
       // validate for errors
       if (STAGE !== 'prod') {
@@ -137,7 +137,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       ` ${expectEnv('GCP_PROJECT_ID')}` +
       `/${expectEnv('GCP_DATASET_ID')}` +
       `/${tableName}:`,
-      util.inspect(recordWithMeta),
+      util.inspect(recordWithMeta, false, null),
     );
 
     table.queue.push(recordWithMeta);
