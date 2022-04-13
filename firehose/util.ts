@@ -17,7 +17,7 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
     case 'function':
     case 'symbol':
     case 'undefined':
-      throw new Error(`Can't generate schema for a '${typeof v}'`);
+      throw new Error(`Can't generate schema for a '${typeof v}' (key: ${k})`);
 
     case 'object':
       // in js, `typeof null` returns 'object'

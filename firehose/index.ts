@@ -6,7 +6,7 @@ import {
   Schema,
   StreamRecord,
 } from './types';
-import { deduplicateFields, expectEnv, genSchema } from './util';
+import { expectEnv, genSchema } from './util';
 
 const STAGE = expectEnv('STAGE');
 
@@ -90,7 +90,9 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
   const dataset = new BigQuery({
     projectId: expectEnv('GCP_PROJECT_ID'),
-    keyFilename: path.join(__dirname, `gcp_keyfile/${STAGE}.json`),
+    keyFilename: expectEnv('GCP_KEYFILE_PATH') ||
+      path.join(__dirname, `gcp_keyfile/${STAGE}.json`)
+    ,
   })
     .dataset(expectEnv('GCP_DATASET_ID'))
   ;
@@ -117,16 +119,19 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
     const recordWithMeta = {
       Keys: streamRecord.Keys,
-      NewImage: streamRecord.NewImage,
-      OldImage: streamRecord.OldImage,
       Metadata: {
         eventKind: eventRecord.eventName,
         timestamp: streamRecord.ApproximateCreationDateTime,
       },
     };
 
+    if ('NewImage' in streamRecord)
+      recordWithMeta['NewImage'] = streamRecord.NewImage;
+    if ('OldImage' in streamRecord)
+      recordWithMeta['OldImage'] = streamRecord.OldImage;
+
     if (!('schema' in table)) {
-      table.schema = deduplicateFields(genSchema(recordWithMeta));
+      table.schema = genSchema(recordWithMeta);
 
       debug(`Generated schema for ${tableName}:`, util.inspect(table.schema, false, null));
 

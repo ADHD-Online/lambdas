@@ -31,22 +31,25 @@ The following env variables are expected by the projects in here:
 
 ### Firehose
 
-| Variable         | Description
-| ---------------- | -----------
-| `STAGE`          | Stage of deployment (such as edge, uat, or prod)
-| `GCP_PROJECT_ID` | ID of the data lake project in gcp
-| `GCP_DATASET_ID` | ID of the data lake dataset in gcp
+| Variable             | Description
+| --------             | -----------
+| `STAGE`              | Stage of deployment (such as edge, uat, or prod)
+| `GCP_KEYFILE_PATH`\* | Path to the keyfile INSIDE the docker container
+| `GCP_PROJECT_ID`     | ID of the data lake project in gcp
+| `GCP_DATASET_ID`     | ID of the data lake dataset in gcp
+
+\* Denotes an optional variable that's given a reasonable default if left blank
 
 ### Messaging
 
 | Variable               | Description
-| ---------------------- | -----------
+| --------               | -----------
 | `STAGE`                | Stage of deployment (such as edge, uat, or prod)
-| `NPM_TOKEN`\*          | Token that can read the ADO npm package registry on Github
+| `NPM_TOKEN`\*\*        | Token that can read the ADO npm package registry on Github
 | `AWS_DEFAULT_REGION`   | 'us-east-2' most likely
 | `CONFIG_TABLE_NAME`    | The name of the dynamodb table that contains flow configs
 | `SES_SOURCE_IDENTITY`  | "ADHDOnline &lt;info@mail.adhdonline.com&gt;"
 | `SES_CONFIG_SET`       | ConfigSet to use
 
-\* Denotes a build-time-only secret that should not end up in the final image
+\*\* Denotes a build-time-only secret that should not end up in the final image
 
