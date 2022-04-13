@@ -12,23 +12,42 @@ export type AttributeValue =
   { M:    Record<string, AttributeValue> } |
   { N:    number                         } |
   { NS:   number[]                       } |
-  { NULL: boolean                        } |
+  { NULL: null                           } |
   { S:    string                         } |
   { SS:   string[]                       }
 ;
 //@ts-ignore
 export const AttributeValue: z.ZodType<AttributeValue> = z.lazy(() =>
   z.union([
-    z.object({ B:    z.string()                           }),
-    z.object({ BS:   z.string().array()                   }),
-    z.object({ BOOL: z.boolean()                          }),
-    z.object({ L:    AttributeValue.array()               }),
-    z.object({ M:    z.record(z.string(), AttributeValue) }),
-    z.object({ N:    z.number()                           }),
-    z.object({ NS:   z.number().array()                   }),
-    z.object({ NULL: z.boolean()                          }),
-    z.object({ S:    z.string()                           }),
-    z.object({ SS:   z.string().array()                   }),
+    // base-64 encoded binary
+    z.object({ B: z.string() }),
+    // base-64 encoded binary set
+    z.object({ BS: z.string().array() }),
+    // boolean
+    z.object({ BOOL:
+      z.boolean().or(z.enum(['true', 'false']))
+        .transform(b => Boolean(b))
+    }),
+    // list
+    z.object({ L: AttributeValue.array() }),
+    // map
+    z.object({ M: z.record(z.string(), AttributeValue) }),
+    // number
+    z.object({ N:
+      z.number().or(z.string())
+        .transform(n => Number(n))
+    }),
+    // number set
+    z.object({ NS:
+      z.number().array().or(z.string().array())
+        .transform(ns => ns.map((n: number | string) => Number(n)))
+    }),
+    // null
+    z.object({ NULL: z.unknown().transform(() => null) }),
+    // string
+    z.object({ S: z.string() }),
+    // string set
+    z.object({ SS: z.string().array() }),
   ])
 );
 

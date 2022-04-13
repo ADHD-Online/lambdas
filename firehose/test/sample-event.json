@@ -19,10 +19,10 @@
           "firstName": { "S": "Testin" },
           "lastName": { "S": "Preston" },
           "type": { "S": "self" },
-          "testInt": { "N": 123 },
-          "testFloat": { "N": 1.23 },
-          "testList": { "L": [ { "N": 1 }, { "N": 2 }, { "N": 3 } ] },
-          "testBool": { "BOOL": true }
+          "testInt": { "N": "123" },
+          "testFloat": { "N": "1.23" },
+          "testList": { "L": [ { "N": "1" }, { "N": "2" }, { "N": "3" } ] },
+          "testBool": { "BOOL": "true" }
         },
         "SequenceNumber": "0",
         "SizeBytes": 0,
