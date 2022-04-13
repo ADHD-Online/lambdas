@@ -25,11 +25,22 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
       if (v === null) {
         throw new Error(`Can't generate schema for a 'null'`);
       } else if (Array.isArray(v)) {
+        const names: Record<string, true> = {};
+        const fields = v
+          .flatMap(genSchema)
+          .filter(field => {
+            if (field.name in names)
+              return false;
+            else
+              return names[field.name] = true;
+          })
+        ;
+
         return {
           name: k,
           type: 'RECORD',
           mode: 'REPEATED',
-          fields: v.flatMap(genSchema),
+          fields,
         };
       } else {
         return {
@@ -52,22 +63,4 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
       return { name: k, type: 'STRING' };
   }
 });
-
-export const deduplicateFields = (schema: Schema[]) => {
-  const model: Record<string, true> = {};
-
-  const dedupHelper = (fields: Schema[], path: string) => fields.filter(field => {
-    const subpath = path + '.' + field.name;
-    if (subpath in model) {
-      return false; // found a duplicate
-    } else {
-      model[subpath] = true;
-      if ('fields' in field)
-        field.fields = dedupHelper(field.fields, subpath);
-      return true;
-    }
-  });
-
-  return dedupHelper(schema, '');
-};
 
