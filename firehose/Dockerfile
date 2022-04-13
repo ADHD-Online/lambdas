@@ -1,4 +1,4 @@
-FROM node:14 AS build-step
+FROM public.ecr.aws/lambda/nodejs:14 AS build-step
 RUN mkdir /build
 WORKDIR /build
 COPY package*.json ./
