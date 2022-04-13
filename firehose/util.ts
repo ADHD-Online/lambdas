@@ -1,8 +1,4 @@
-import {
-  Schema,
-  SchemaMode,
-  SchemaType,
-} from './types';
+import { Schema } from './types';
 
 export const expectEnv = (key: string, message?: string) => {
   const val = process.env[key];
@@ -40,7 +36,11 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
           name: k,
           type: 'RECORD',
           mode: 'REPEATED',
-          fields,
+          fields: fields.length > 0
+            ? fields
+            // default if list is empty
+            : [{ name: '_AUTODETECT_EMPTY_LIST', type: 'BOOLEAN' }]
+          ,
         };
       } else {
         return {
