@@ -1,18 +1,17 @@
-FROM node:14 AS build-step
-ARG NPM_TOKEN
+FROM public.ecr.aws/lambda/nodejs:14 AS build-step
 RUN mkdir /build
 WORKDIR /build
 COPY package*.json ./
-COPY .npmrc .npmrc
 RUN npm ci
 COPY . .
 RUN npm run build
 
 FROM public.ecr.aws/lambda/nodejs:14
-ARG NPM_TOKEN
 # transform arguments to env
 ARG STAGE
 ENV STAGE=$STAGE
+ARG GCP_KEYFILE_PATH
+ENV GCP_KEYFILE_PATH=$GCP_KEYFILE_PATH
 ARG CONFIG_TABLE_NAME
 ENV CONFIG_TABLE_NAME=$CONFIG_TABLE_NAME
 ARG SES_SOURCE_IDENTITY
@@ -22,8 +21,8 @@ ENV SES_CONFIG_SET=$SES_CONFIG_SET
 # proceed with deploy
 WORKDIR ${LAMBDA_TASK_ROOT}
 COPY package*.json ./
-COPY .npmrc .npmrc
 COPY --from=build-step /build/dist .
 RUN npm ci --only=production
+# to be overridden
 CMD [ "index.default" ]
 

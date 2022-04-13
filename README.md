@@ -45,11 +45,38 @@ The following env variables are expected by the projects in here:
 | Variable               | Description
 | --------               | -----------
 | `STAGE`                | Stage of deployment (such as edge, uat, or prod)
-| `NPM_TOKEN`\*\*        | Token that can read the ADO npm package registry on Github
-| `AWS_DEFAULT_REGION`   | 'us-east-2' most likely
+| `GCP_KEYFILE_PATH`\*   | Path to the keyfile INSIDE the docker container
+| `GCP_PROJECT_ID`       | ID of the data lake project in gcp
+| `GCP_DATASET_ID`       | ID of the data lake dataset in gcp
 | `CONFIG_TABLE_NAME`    | The name of the dynamodb table that contains flow configs
 | `SES_SOURCE_IDENTITY`  | "ADHDOnline &lt;info@mail.adhdonline.com&gt;"
 | `SES_CONFIG_SET`       | ConfigSet to use
 
-\*\* Denotes a build-time-only secret that should not end up in the final image
+\* Denotes an optional variable that's given a reasonable default if left blank
+
+## Messaging Flows
+
+Flows are described in `index.ts` using the flow function, described below.
+
+    flow(flowKey: string, viewParser: ZodType) -> lambda handler
+
+`flowKey` is a string that uniquely identifies this flow. It must match the
+export's name exactly; it must be given exactly to the cdk project's
+`OneWayMessagingStack` in the `enabledFlows` array; there must be a view with
+the exact same name; and the dynamodb config table must have a pk that's exactly
+the key prefixed with `messaging#`. See the table below for an example.
+
+| Flow Key  | Handler Name | CDK Argument | BigQuery View Name | Config Table pk
+| --------  | -------------| ------------ | ------------------ | ---------------
+| `"MyKey"` | `"MyKey"`    | `"MyKey"`    | `"MyKey"`          | `"messaging#MyKey"`
+
+Hope that's clear enough.
+
+`viewParser` is a zod parser that matches exactly the data returned by the
+associated view in BigQuery. This exists as a fail-fast sanity check, as well
+as a means of transforming the incoming view data if that's ever necessary, for
+whatever reason.
+
+The function returns a no-arguments lambda handler that will run the view when
+triggered.
 

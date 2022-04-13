@@ -1,8 +1,10 @@
+import path from 'path';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
-import { ConfigTableData } from '@adhd-online/unified-types/messaging';
+import { BigQuery } from '@google-cloud/bigquery';
+import { ConfigTableData } from './types';
 
 const EMAIL_HARD_LIMIT_BYTES = 10_000_000; // 10MB
 const SMS_SOFT_LIMIT_BYTES = 140;
@@ -21,6 +23,17 @@ export const expectEnv = (key: string, message?: string) => {
 };
 
 export const STAGE = expectEnv('STAGE');
+
+export const fetchView = (flowKey: string) => new BigQuery({
+  projectId: expectEnv('GCP_PROJECT_ID'),
+  keyFilename: process.env['GCP_KEYFILE_PATH'] ||
+    path.join(__dirname, `gcp_keyfile/${STAGE}.json`)
+  ,
+})
+  .dataset(expectEnv('GCP_DATASET_ID'))
+  .table(flowKey)
+  .getRows()
+;
 
 export const fetchConfig = async (flowKey: string) => {
   const res = await DYNAMO_CLIENT.send(new GetItemCommand({
