@@ -87,7 +87,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
 
   const dataset = new BigQuery({
     projectId: expectEnv('GCP_PROJECT_ID'),
-    keyFilename: expectEnv('GCP_KEYFILE_PATH') ||
+    keyFilename: process.env['GCP_KEYFILE_PATH'] ||
       path.join(__dirname, `gcp_keyfile/${STAGE}.json`)
     ,
   })
