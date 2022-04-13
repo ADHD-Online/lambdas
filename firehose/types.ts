@@ -43,7 +43,7 @@ export const AttributeValue: z.ZodType<AttributeValue> = z.lazy(() =>
         .transform(ns => ns.map((n: number | string) => Number(n)))
     }),
     // null
-    z.object({ NULL: z.unknown().transform(() => null) }),
+    z.object({ NULL: z.literal(null).or(z.string()).transform(() => null) }),
     // string
     z.object({ S: z.string() }),
     // string set
