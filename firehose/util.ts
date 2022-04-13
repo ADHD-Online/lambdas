@@ -25,10 +25,12 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
         const fields = v
           .flatMap(genSchema)
           .filter(field => {
-            if (field.name in names)
+            // bigquery column names are case insensitive
+            const name = field.name.toLowerCase();
+            if (name in names)
               return false;
             else
-              return names[field.name] = true;
+              return names[name] = true;
           })
         ;
 
