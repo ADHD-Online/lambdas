@@ -1,12 +1,15 @@
 import path from 'path';
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  UpdateItemCommand,
+} from '@aws-sdk/client-dynamodb';
+import { SESClient, SendTemplatedEmailCommand } from '@aws-sdk/client-ses';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { BigQuery } from '@google-cloud/bigquery';
 import { ConfigTableData } from './types';
 
-const EMAIL_HARD_LIMIT_BYTES = 10_000_000; // 10MB
 const SMS_SOFT_LIMIT_BYTES = 140;
 const SMS_HARD_LIMIT_BYTES = 1600;
 
@@ -50,30 +53,19 @@ export const fetchConfig = async (flowKey: string) => {
   return configs;
 };
 
-export const sendEmail = (
-  to: string,
-  subject: string,
-  message: string,
-) => {
-  const len = ENCODER.encode(message).length;
-
-  if (len > EMAIL_HARD_LIMIT_BYTES) {
-    const mb = EMAIL_HARD_LIMIT_BYTES / 1_000_000;
-    throw new Error(
-      `Message of length ${len} bytes is longer than ${mb}MB AWS SNS hard limit`
-    );
-  }
-
+export const sendEmail = ({ templateName, to, replacements }: {
+  templateName: string;
+  to: string;
+  replacements: Record<string, string>;
+}) => {
   console.log(`Sending email to ${to}...`);
 
-  return SES_CLIENT.send(new SendEmailCommand({
+  return SES_CLIENT.send(new SendTemplatedEmailCommand({
     ConfigurationSetName: expectEnv('SES_CONFIG_SET'),
     Source: expectEnv('SES_SOURCE_IDENTITY'),
     Destination: { ToAddresses: [to] },
-    Message: {
-      Subject: { Data: subject, Charset: 'UTF-8' },
-      Body: { Html: { Data: message, Charset: 'UTF-8' } },
-    },
+    Template: templateName,
+    TemplateData: JSON.stringify(replacements),
   }));
 };
 
@@ -98,6 +90,18 @@ export const sendSms = (to: string, message: string) => {
   return SNS_CLIENT.send(new PublishCommand({
     Message: message,
     PhoneNumber: to,
+  }));
+};
+
+export const setNextSteps = (key: { pk: string, sk: string }, message: string) => {
+  DYNAMO_CLIENT.send(new UpdateItemCommand({
+    TableName: expectEnv('DATA_TABLE_NAME'),
+    Key: {
+      pk: { S: key.pk },
+      sk: { S: key.sk },
+    },
+    UpdateExpression: 'SET metadata.nextStep = :m',
+    ExpressionAttributeValues: { ':m': { 'S': message } },
   }));
 };
 

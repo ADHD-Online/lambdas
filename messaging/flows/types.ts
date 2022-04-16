@@ -6,6 +6,7 @@ export const ConfigTableData = z.object({
       subject: z.string(),
       body: z.string(),
     }),
+    nextSteps: z.string(),
     sms: z.string(),
   }),
 });

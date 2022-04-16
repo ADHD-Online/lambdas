@@ -11,7 +11,10 @@ export default () => {
 export const ScheduleInitialAppointmentReminder = flow(
   'ScheduleInitialAppointmentReminder',
   z.object({
-    patientId: z.string(),
+    patientRecordKey: z.object({
+      pk: z.string(),
+      sk: z.string(),
+    }),
     email: z.string().optional(),
     phone: z.string().optional(),
     appointment: z.object({

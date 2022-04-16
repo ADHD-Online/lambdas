@@ -48,6 +48,7 @@ The following env variables are expected by the projects in here:
 | `GCP_KEYFILE_PATH`\*   | Path to the keyfile INSIDE the docker container
 | `GCP_PROJECT_ID`       | ID of the data lake project in gcp
 | `GCP_DATASET_ID`       | ID of the data lake dataset in gcp
+| `DATA_TABLE_NAME`      | The name of the dynamodb table that contains api data
 | `CONFIG_TABLE_NAME`    | The name of the dynamodb table that contains flow configs
 | `SES_SOURCE_IDENTITY`  | "ADHDOnline &lt;info@mail.adhdonline.com&gt;"
 | `SES_CONFIG_SET`       | ConfigSet to use

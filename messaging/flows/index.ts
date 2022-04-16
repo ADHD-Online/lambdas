@@ -1,6 +1,12 @@
 import Mustache from 'mustache';
 import { ZodType } from 'zod';
-import { fetchConfig, fetchView, sendEmail, sendSms } from './util';
+import {
+  fetchConfig,
+  fetchView,
+  sendEmail,
+  sendSms,
+  setNextSteps,
+} from './util';
 
 export default (flowKey: string, viewParser: ZodType) => async () => {
   const [configs, views] = await Promise.all([
@@ -14,13 +20,14 @@ export default (flowKey: string, viewParser: ZodType) => async () => {
     const promises = [];
 
     if (view.email) {
-      promises.push(
-        sendEmail(
-          view.email,
-          Mustache.render(templates.email.subject, view),
-          Mustache.render(templates.email.body, view),
-        )
-      );
+      promises.push(sendEmail({
+        templateName: flowKey,
+        to: view.email,
+        replacements: {
+          ...view,
+          year: '' + new Date().getFullYear(),
+        },
+      }));
     }
 
     if (view.phone) {
@@ -28,6 +35,11 @@ export default (flowKey: string, viewParser: ZodType) => async () => {
         sendSms(view.phone, Mustache.render(templates.sms, view))
       );
     }
+
+    promises.push(setNextSteps(
+      view.patientRecordKey,
+      Mustache.render(templates.nextSteps, view),
+    ));
 
     return promises;
   }));
