@@ -1,5 +1,11 @@
 import { z } from 'zod';
 import flow from './flows';
+import {
+  fetchDemoView,
+} from './flows/util';
+import {
+  ViewData,
+} from './flows/types';
 
 export default () => {
   throw new Error(
@@ -8,20 +14,11 @@ export default () => {
   );
 }
 
-export const ScheduleInitialAppointmentReminder = flow(
-  'ScheduleInitialAppointmentReminder',
-  z.object({
-    patientRecordKey: z.object({
-      pk: z.string(),
-      sk: z.string(),
-    }),
-    email: z.string().optional(),
-    phone: z.string().optional(),
-    appointment: z.object({
-      date: z.string(),
-      time: z.string(),
-      provider: z.string(),
-    }),
-  }),
-);
+export const ScheduleInitialAppointmentReminder = flow({
+  flowKey: 'ScheduleInitialAppointmentReminder',
+  source: () => fetchDemoView(ViewData.merge(z.object({
+    firstName: z.string(),
+    year: z.string(),
+  }))),
+});
 

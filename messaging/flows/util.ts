@@ -1,6 +1,8 @@
 import path from 'path';
+import { z, ZodType } from 'zod';
 import {
   DynamoDBClient,
+  BatchGetItemCommand,
   GetItemCommand,
   UpdateItemCommand,
 } from '@aws-sdk/client-dynamodb';
@@ -27,7 +29,7 @@ export const expectEnv = (key: string, message?: string) => {
 
 export const STAGE = expectEnv('STAGE');
 
-export const fetchView = (flowKey: string) => new BigQuery({
+export const fetchViewBq = (flowKey: string) => new BigQuery({
   projectId: expectEnv('GCP_PROJECT_ID'),
   keyFilename: process.env['GCP_KEYFILE_PATH'] ||
     path.join(__dirname, `gcp_keyfile/${STAGE}.json`)
@@ -37,6 +39,31 @@ export const fetchView = (flowKey: string) => new BigQuery({
   .table(flowKey)
   .getRows()
 ;
+
+export const fetchDemoView = async (ViewData: ZodType) => {
+  const profile = await DYNAMO_CLIENT.send(
+    new GetItemCommand({
+      TableName: expectEnv('DATA_TABLE_NAME'),
+      Key: {
+        pk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
+        sk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
+      },
+    }),
+  )
+    .then(res => res.Item)
+  ;
+
+  return [{
+    patientRecordKey: {
+      pk: 'userProfile#auth0|61e88854d90f5c0071ccdc14',
+      sk: 'patient#01FST5BXHKP8C1XBM20VT8YNN7',
+    },
+    email: profile.emailAddress,
+    phone: profile.phoneNumber,
+    year: new Date().getFullYear(),
+    firstName: profile.firstName,
+  }] as z.infer<typeof ViewData>[];
+};
 
 export const fetchConfig = async (flowKey: string) => {
   const res = await DYNAMO_CLIENT.send(new GetItemCommand({
