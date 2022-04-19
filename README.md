@@ -53,13 +53,16 @@ The following env variables are expected by the projects in here:
 | `SES_SOURCE_IDENTITY`  | "ADHDOnline &lt;info@mail.adhdonline.com&gt;"
 | `SES_CONFIG_SET`       | ConfigSet to use
 
-\* Denotes an optional variable that's given a reasonable default if left blank
+\* Denotes an optional variable that should be left blank when building for the cloud
 
 ## Messaging Flows
 
 Flows are described in `index.ts` using the flow function, described below.
 
-    flow(flowKey: string, viewParser: ZodType) -> lambda handler
+    flow({
+      flowKey: string;
+      source: async () => flow data;
+    }) => lambda handler
 
 `flowKey` is a string that uniquely identifies this flow. It must match the
 export's name exactly; it must be given exactly to the cdk project's
@@ -73,11 +76,25 @@ the key prefixed with `messaging#`. See the table below for an example.
 
 Hope that's clear enough.
 
-`viewParser` is a zod parser that matches exactly the data returned by the
-associated view in BigQuery. This exists as a fail-fast sanity check, as well
-as a means of transforming the incoming view data if that's ever necessary, for
-whatever reason.
+`source` is a functin that fetches and prepares the flow's data. It expects at
+a minimum to have a result like:
 
-The function returns a no-arguments lambda handler that will run the view when
-triggered.
+    {
+      patientRecordKey: {
+        pk: string;
+        sk: string;
+      };
+      email?: string;
+      phone?: string;
+    }
+
+...which represent the three side effects these flows are meant to cause.
+`patientRecordKey` is how the lambda changes the `nextSteps` section of the user's
+portal, `email` is the user's email, and `phone` is the user's phone number
+(these two only need to be present if the user hasn't opted out of either mode
+of contact). Any additional fields will be replaced-into the message/email
+templates.
+
+The function returns an appropriate-arguments lambda handler that will run the
+view when triggered.
 

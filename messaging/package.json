@@ -20,6 +20,7 @@
     "@aws-sdk/client-sns": "^3.58.0",
     "@aws-sdk/util-dynamodb": "^3.58.0",
     "@google-cloud/bigquery": "^5.12.0",
+    "libphonenumber-js": "^1.9.51",
     "mustache": "^4.2.0",
     "node-fetch": "^3.2.3",
     "zod": "^3.14.4"

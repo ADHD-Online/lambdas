@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
-CREDENTIALS="$HOME/gcp_credentials"
+GCP_CREDENTIALS="$HOME/gcp_credentials"
+AWS_CREDENTIALS="$HOME/.aws"
+
+COMMAND="index.${1:-default}"
 
 docker run \
     -p 9000:8080 \
-    -v "$CREDENTIALS:/root/gcp_credentials:ro" \
-    firehose:latest
+    -v "$GCP_CREDENTIALS:/root/gcp_credentials:ro" \
+    -v "$AWS_CREDENTIALS:/root/.aws:ro" \
+    messaging:latest \
+    "$COMMAND"
 

@@ -1,5 +1,4 @@
 import Mustache from 'mustache';
-import { ZodType } from 'zod';
 import {
   fetchConfig,
   sendEmail,

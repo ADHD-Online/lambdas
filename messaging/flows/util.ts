@@ -5,11 +5,13 @@ import {
   BatchGetItemCommand,
   GetItemCommand,
   UpdateItemCommand,
+  UpdateItemCommandInput,
 } from '@aws-sdk/client-dynamodb';
 import { SESClient, SendTemplatedEmailCommand } from '@aws-sdk/client-ses';
 import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { BigQuery } from '@google-cloud/bigquery';
+import parsePhoneNumber from 'libphonenumber-js';
 import { ConfigTableData } from './types';
 
 const SMS_SOFT_LIMIT_BYTES = 140;
@@ -41,16 +43,25 @@ export const fetchViewBq = (flowKey: string) => new BigQuery({
 ;
 
 export const fetchDemoView = async (ViewData: ZodType) => {
-  const profile = await DYNAMO_CLIENT.send(
-    new GetItemCommand({
-      TableName: expectEnv('DATA_TABLE_NAME'),
-      Key: {
-        pk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
-        sk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
+  const DATA_TABLE_NAME = expectEnv('DATA_TABLE_NAME');
+  const [profile, assessment] = await DYNAMO_CLIENT.send(
+    new BatchGetItemCommand({
+      RequestItems: {
+        [DATA_TABLE_NAME]: {
+          Keys: [
+            {
+              pk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
+              sk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
+            }, {
+              pk: { S: 'patient#01FST5BXHKP8C1XBM20VT8YNN7' },
+              sk: { S: 'assessment#adhd#5709415540947815576589817006250105534990275433135759978277#result' },
+            },
+          ],
+        },
       },
     }),
   )
-    .then(res => res.Item)
+    .then(res => res.Responses[DATA_TABLE_NAME])
   ;
 
   return [{
@@ -58,10 +69,14 @@ export const fetchDemoView = async (ViewData: ZodType) => {
       pk: 'userProfile#auth0|61e88854d90f5c0071ccdc14',
       sk: 'patient#01FST5BXHKP8C1XBM20VT8YNN7',
     },
-    email: profile.emailAddress,
-    phone: profile.phoneNumber,
+    email: profile.emailAddress.S,
+    phone: profile.phoneNumber.S,
+    apptType: assessment.metadata.M.findings.M.summary.S.match(/attention.*deficit/i)
+      ? 'Med Management'
+      : 'TeleTherapy'
+    ,
     year: new Date().getFullYear(),
-    firstName: profile.firstName,
+    firstName: profile.firstName.S,
   }] as z.infer<typeof ViewData>[];
 };
 
@@ -80,7 +95,7 @@ export const fetchConfig = async (flowKey: string) => {
   return configs;
 };
 
-export const sendEmail = ({ templateName, to, replacements }: {
+export const sendEmail = async ({ templateName, to, replacements }: {
   templateName: string;
   to: string;
   replacements: Record<string, string>;
@@ -93,10 +108,16 @@ export const sendEmail = ({ templateName, to, replacements }: {
     Destination: { ToAddresses: [to] },
     Template: templateName,
     TemplateData: JSON.stringify(replacements),
-  }));
+  }))
+    .then(res => {
+      if (STAGE !== 'prod') {
+        console.debug('SES Publish result:', res);
+      }
+    })
+  ;
 };
 
-export const sendSms = (to: string, message: string) => {
+export const sendSms = async (to: string, message: string) => {
   const len = ENCODER.encode(message).length;
 
   if (len > SMS_HARD_LIMIT_BYTES) {
@@ -112,23 +133,56 @@ export const sendSms = (to: string, message: string) => {
     );
   }
 
-  console.log(`Sending sms to ${to}...`);
+  const phone = parsePhoneNumber(to, 'US');
+  console.log(`Sending sms to ${phone.number}...`);
 
   return SNS_CLIENT.send(new PublishCommand({
     Message: message,
-    PhoneNumber: to,
-  }));
+    PhoneNumber: phone.number,
+  }))
+    .then(res => {
+      if (STAGE !== 'prod') {
+        console.debug('SMS Publish result:', res);
+      }
+    })
+  ;
 };
 
-export const setNextSteps = (key: { pk: string, sk: string }, message: string) => {
-  DYNAMO_CLIENT.send(new UpdateItemCommand({
+export const setNextSteps = async (key: { pk: string, sk: string }, message: string) => {
+  const metadata = await DYNAMO_CLIENT.send(new GetItemCommand({
     TableName: expectEnv('DATA_TABLE_NAME'),
     Key: {
       pk: { S: key.pk },
       sk: { S: key.sk },
     },
-    UpdateExpression: 'SET metadata.nextStep = :m',
-    ExpressionAttributeValues: { ':m': { 'S': message } },
+    ProjectionExpression: 'metadata',
   }));
+
+  let commandInput: UpdateItemCommandInput = {
+    TableName: expectEnv('DATA_TABLE_NAME'),
+    Key: {
+      pk: { S: key.pk },
+      sk: { S: key.sk },
+    },
+  };
+  if (Object.keys(metadata.Item).length > 0) {
+    Object.assign(commandInput, {
+      UpdateExpression: 'SET metadata.nextStep = :m',
+      ExpressionAttributeValues: { ':m': { 'S': message } },
+    });
+  } else {
+    Object.assign(commandInput, {
+      UpdateExpression: 'SET metadata = :md',
+      ExpressionAttributeValues: { ':md': { 'M': { 'nextStep' : { 'S': message } } } },
+    });
+  }
+
+  return DYNAMO_CLIENT.send(new UpdateItemCommand(commandInput))
+    .then(res => {
+      if (STAGE !== 'prod') {
+        console.debug('Next Steps publish result:', res);
+      }
+    })
+  ;
 };
 

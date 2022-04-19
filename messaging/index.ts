@@ -17,6 +17,7 @@ export default () => {
 export const ScheduleInitialAppointmentReminder = flow({
   flowKey: 'ScheduleInitialAppointmentReminder',
   source: () => fetchDemoView(ViewData.merge(z.object({
+    apptType: z.enum(['Med Management', 'TeleTherapy']),
     firstName: z.string(),
     year: z.string(),
   }))),

@@ -2,10 +2,6 @@ import { z } from 'zod';
 
 export const ConfigTableData = z.object({
   templates: z.object({
-    email: z.object({
-      subject: z.string(),
-      body: z.string(),
-    }),
     nextSteps: z.string(),
     sms: z.string(),
   }),
@@ -19,6 +15,6 @@ export const ViewData = z.object({
   }),
   email: z.string().optional(),
   phone: z.string().optional(),
-});
+}).passthrough();
 export type ViewData = z.infer<typeof ViewData>;
 
