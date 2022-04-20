@@ -2,8 +2,8 @@ import path from 'path';
 import { z, ZodType } from 'zod';
 import {
   DynamoDBClient,
-  BatchGetItemCommand,
   GetItemCommand,
+  QueryCommand,
   UpdateItemCommand,
   UpdateItemCommandInput,
 } from '@aws-sdk/client-dynamodb';
@@ -42,42 +42,57 @@ export const fetchViewBq = (flowKey: string) => new BigQuery({
   .getRows()
 ;
 
-export const fetchDemoView = async (ViewData: ZodType) => {
+export const fetchDemoView = async (auth0Id: string, ViewData: ZodType) => {
   const DATA_TABLE_NAME = expectEnv('DATA_TABLE_NAME');
-  const [profile, assessment] = await DYNAMO_CLIENT.send(
-    new BatchGetItemCommand({
-      RequestItems: {
-        [DATA_TABLE_NAME]: {
-          Keys: [
-            {
-              pk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
-              sk: { S: 'userProfile#auth0|61e88854d90f5c0071ccdc14' },
-            }, {
-              pk: { S: 'patient#01FST5BXHKP8C1XBM20VT8YNN7' },
-              sk: { S: 'assessment#adhd#5709415540947815576589817006250105534990275433135759978277#result' },
-            },
-          ],
-        },
+  const rows = await DYNAMO_CLIENT.send(
+    new QueryCommand({
+      TableName: DATA_TABLE_NAME,
+      KeyConditionExpression: 'pk = :pk',
+      ExpressionAttributeValues: {
+        ':pk': { S: `userProfile#${auth0Id}` },
       },
     }),
   )
-    .then(res => res.Responses[DATA_TABLE_NAME])
+    .then(res => res.Items)
   ;
 
-  return [{
+  const account = rows.find(row => row.sk.S.toUpperCase().includes('USERPROFILE'));
+  const patient = rows.find(row =>
+    row.sk.S.toUpperCase().includes('PATIENT') &&
+    row.type.S === 'self'
+  );
+
+  // this has to be a second query because the sk contains a patient id,
+  // which is unknown at the time of the first query
+  const moreRows = await DYNAMO_CLIENT.send(
+    new QueryCommand({
+      TableName: DATA_TABLE_NAME,
+      KeyConditionExpression: 'pk = :pk',
+      ExpressionAttributeValues: {
+        ':pk': patient.sk,
+      },
+    })
+  )
+    .then(res => res.Items)
+  ;
+
+  const assessment = moreRows.find(row => row.sk.S.toUpperCase().includes('ASSESSMENT'));
+
+  return [ViewData.parse({
     patientRecordKey: {
-      pk: 'userProfile#auth0|61e88854d90f5c0071ccdc14',
-      sk: 'patient#01FST5BXHKP8C1XBM20VT8YNN7',
+      pk: patient.pk.S,
+      sk: patient.sk.S,
     },
-    email: profile.emailAddress.S,
-    phone: profile.phoneNumber.S,
-    apptType: assessment.metadata.M.findings.M.summary.S.match(/attention.*deficit/i)
+    email: account.emailAddress.S,
+    phone: account.phoneNumber.S,
+    // F90 is the code for a positive adhd diagnosis
+    apptType: assessment.metadata.M.findings.M.summary.S.includes('F90')
       ? 'Med Management'
       : 'TeleTherapy'
     ,
-    year: new Date().getFullYear(),
-    firstName: profile.firstName.S,
-  }] as z.infer<typeof ViewData>[];
+    year: '' + new Date().getFullYear(),
+    firstName: patient.firstName.S,
+  })];
 };
 
 export const fetchConfig = async (flowKey: string) => {

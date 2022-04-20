@@ -20,11 +20,11 @@ export default <T extends ViewData>({
   source,
 }: {
   flowKey: string;
-  source: () => Promise<T[]>;
-}) => async () => {
+  source: (target?: string) => Promise<T[]>;
+}) => async ({ target }: { target?: string }) => {
   const [configs, views] = await Promise.all([
     fetchConfig(`messaging#${flowKey}`),
-    source(),
+    source(target),
   ]);
 
   // perform actions
