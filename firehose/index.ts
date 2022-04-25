@@ -116,7 +116,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     const table = tables[tableName];
 
     const recordWithMeta = {
-      Keys: unmarshall(streamRecord.Keys),
+      Keys: unmarshall(streamRecord.Keys as any),
       Metadata: {
         eventKind: eventRecord.eventName,
         timestamp: streamRecord.ApproximateCreationDateTime,
@@ -124,9 +124,9 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     };
 
     if ('NewImage' in streamRecord)
-      recordWithMeta['NewImage'] = unmarshall(streamRecord.NewImage);
+      recordWithMeta['NewImage'] = unmarshall(streamRecord.NewImage as any);
     if ('OldImage' in streamRecord)
-      recordWithMeta['OldImage'] = unmarshall(streamRecord.OldImage);
+      recordWithMeta['OldImage'] = unmarshall(streamRecord.OldImage as any);
 
     if (!('schema' in table)) {
       table.schema = genSchema(recordWithMeta);
