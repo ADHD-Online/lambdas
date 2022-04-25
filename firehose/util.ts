@@ -8,7 +8,7 @@ export const expectEnv = (key: string, message?: string) => {
 };
 
 export const genObjSchema = (o: object): Schema[] =>
-  Object.entries(o).flatMap(kv => genSchema(...kv).fields)
+  Object.entries(o).map(kv => genSchema(...kv))
 ;
 
 export const genSchema = (k: string, v: any): Schema => {
