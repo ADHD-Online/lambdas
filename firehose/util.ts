@@ -7,7 +7,11 @@ export const expectEnv = (key: string, message?: string) => {
   return val;
 };
 
-export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k, v]) => {
+export const genObjSchema = (o: object): Schema[] =>
+  Object.entries(o).flatMap(kv => genSchema(...kv).fields)
+;
+
+export const genSchema = (k: string, v: any): Schema => {
   switch (typeof v) {
     case 'bigint':
     case 'function':
@@ -20,35 +24,37 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
       // this is a historical language bug that may never be fixed
       if (v === null) {
         throw new Error(`Can't generate schema for a 'null'`);
-      } else if (Array.isArray(v)) {
-        const names: Record<string, true> = {};
-        const fields = v
-          .flatMap(genSchema)
-          .filter(field => {
-            // bigquery column names are case insensitive
-            const name = field.name.toLowerCase();
-            if (name in names)
-              return false;
-            else
-              return names[name] = true;
-          })
-        ;
 
-        return {
+      // process array
+      } else if (Array.isArray(v)) {
+        const allSchemas = v.map((elem, i) => genSchema('' + i, elem));
+
+        // disallow mixed types (allow heterogeneous object types)
+        const type = allSchemas
+          .map(s => s.type)
+          .reduce((a, s) => a === s ? a : null)
+        ;
+        if (type === null) {
+          throw new Error('Array cannot have mixed types');
+        }
+
+        const schema: Schema = {
           name: k,
-          type: 'RECORD',
+          type,
           mode: 'REPEATED',
-          fields: fields.length > 0
-            ? fields
-            // default if list is empty
-            : [{ name: '_AUTODETECT_EMPTY_LIST', type: 'BOOLEAN' }]
-          ,
         };
+        if (type === 'RECORD') {
+          schema.fields = allSchemas.flatMap(s => s.fields);
+        }
+
+        return schema;
+
+      // process pojo
       } else {
         return {
           name: k,
           type: 'RECORD',
-          fields: genSchema(v),
+          fields: genObjSchema(v),
         };
       }
 
@@ -64,5 +70,5 @@ export const genSchema = (thing: any): Schema[] => Object.entries(thing).map(([k
     case 'string':
       return { name: k, type: 'STRING' };
   }
-});
+};
 

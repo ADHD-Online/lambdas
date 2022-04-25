@@ -7,7 +7,7 @@ import {
   Schema,
   StreamRecord,
 } from './types';
-import { expectEnv, genSchema } from './util';
+import { expectEnv, genObjSchema } from './util';
 
 const STAGE = expectEnv('STAGE');
 
@@ -129,7 +129,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
       recordWithMeta['OldImage'] = unmarshall(streamRecord.OldImage as any);
 
     if (!('schema' in table)) {
-      table.schema = genSchema(recordWithMeta);
+      table.schema = genObjSchema(recordWithMeta);
 
       debug(`Generated schema for ${tableName}:`, util.inspect(table.schema, false, null));
 
