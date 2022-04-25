@@ -1,5 +1,6 @@
 import path from 'path';
 import util from 'util';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { BigQuery, Table } from '@google-cloud/bigquery';
 import {
   DynamoDBStreamEvent,
@@ -115,7 +116,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     const table = tables[tableName];
 
     const recordWithMeta = {
-      Keys: streamRecord.Keys,
+      Keys: unmarshall(streamRecord.Keys),
       Metadata: {
         eventKind: eventRecord.eventName,
         timestamp: streamRecord.ApproximateCreationDateTime,
@@ -123,9 +124,9 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     };
 
     if ('NewImage' in streamRecord)
-      recordWithMeta['NewImage'] = streamRecord.NewImage;
+      recordWithMeta['NewImage'] = unmarshall(streamRecord.NewImage);
     if ('OldImage' in streamRecord)
-      recordWithMeta['OldImage'] = streamRecord.OldImage;
+      recordWithMeta['OldImage'] = unmarshall(streamRecord.OldImage);
 
     if (!('schema' in table)) {
       table.schema = genSchema(recordWithMeta);
