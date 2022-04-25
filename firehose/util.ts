@@ -30,9 +30,9 @@ export const genSchema = (k: string, v: any): Schema => {
         const allSchemas = v.map((elem, i) => genSchema('' + i, elem));
 
         // disallow mixed types (allow heterogeneous object types)
-        const type = allSchemas
-          .map(s => s.type)
-          .reduce((a, s) => a === s ? a : null)
+        const type = allSchemas.length > 0
+          ? allSchemas.map(s => s.type).reduce((a, s) => a === s ? a : null)
+          : 'STRING';
         ;
         if (type === null) {
           throw new Error('Array cannot have mixed types');
