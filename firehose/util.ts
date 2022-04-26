@@ -48,7 +48,14 @@ export const genSchema = (k: string, v: any): Schema => {
           mode: 'REPEATED',
         };
         if (type === 'RECORD') {
-          schema.fields = allSchemas.flatMap(s => s.fields);
+          schema.fields = [];
+          const combinedSchemas = allSchemas.flatMap(s => s.fields);
+          // deduplicate
+          for (const s of combinedSchemas) {
+            if (!schema.fields.find(d => d.name === s.name)) {
+              schema.fields.push(s);
+            }
+          }
         }
 
         return schema;
