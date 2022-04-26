@@ -23,7 +23,9 @@
           "testFloat": { "N": "1.23" },
           "testBool": { "BOOL": "true" },
           "testList": { "L": [ { "N": "1" }, { "N": "2" }, { "N": "3" } ] },
-          "testEmptyList": { "L": [] }
+          "testEmptyList": { "L": [] },
+          "testNull": null,
+          "testNestedNulls": { "L": [ { "S": null }, null, [ null ] ] }
         },
         "SequenceNumber": "0",
         "SizeBytes": 0,
