@@ -25,7 +25,16 @@
           "testList": { "L": [ { "N": "1" }, { "N": "2" }, { "N": "3" } ] },
           "testEmptyList": { "L": [] },
           "testNull": { "NULL": true },
-          "testNestedNulls": { "L": [ { "NULL": true }  ] }
+          "testNestedNulls": { "L": [ { "NULL": true }  ] },
+          "testArrayFieldsCollapse": { "L": [
+            { "M": {
+                "duplicateField": { "N": 1 },
+                "nonDuplicateField": { "N": 2 }
+            } },
+            { "M": {
+              "duplicateField": { "N": 3 }
+            } }
+          ] }
         },
         "SequenceNumber": "0",
         "SizeBytes": 0,
