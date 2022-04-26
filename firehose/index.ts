@@ -77,7 +77,7 @@ const recordToTableName = (record: StreamRecord) => {
 
     default:
       debugError('Could not classify record:', util.inspect(record, false, null));
-      throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
+      return 'miscellaneous';
   }
 };
 
