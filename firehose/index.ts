@@ -83,7 +83,7 @@ const recordToTableName = (record: StreamRecord) => {
 
 export const handler = async (event: DynamoDBStreamEvent) => {
   // validate and transform
-  const event_ = DynamoDBStreamEvent.parse(event);
+  const event_ = event; // DynamoDBStreamEvent.parse(event);
   console.log(`Received ${event_.Records.length} rows for ingestion`);
 
   const dataset = new BigQuery({
