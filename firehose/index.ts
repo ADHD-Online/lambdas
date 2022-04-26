@@ -83,8 +83,7 @@ const recordToTableName = (record: StreamRecord) => {
 
 export const handler = async (event: DynamoDBStreamEvent) => {
   // validate and transform
-  const event_ = event; // DynamoDBStreamEvent.parse(event);
-  console.log(`Received ${event_.Records.length} rows for ingestion`);
+  console.log(`Received ${event.Records.length} rows for ingestion`);
 
   const dataset = new BigQuery({
     projectId: expectEnv('GCP_PROJECT_ID'),
@@ -102,7 +101,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
   }> = {};
 
   // sort rows for ingestion
-  for (const eventRecord of event_.Records) {
+  for (const eventRecord of event.Records) {
     const streamRecord = eventRecord.dynamodb;
     const tableName = recordToTableName(streamRecord);
 

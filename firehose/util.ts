@@ -23,7 +23,11 @@ export const genSchema = (k: string, v: any): Schema => {
       // in js, `typeof null` returns 'object'
       // this is a historical language bug that may never be fixed
       if (v === null) {
-        throw new Error(`Can't generate schema for a 'null'`);
+        return {
+          name: k,
+          type: 'STRING',
+          mode: 'NULLABLE',
+        };
 
       // process array
       } else if (Array.isArray(v)) {
