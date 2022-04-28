@@ -49,24 +49,56 @@
       "eventSourceArn": "arn:aws:dynamodb:::table",
       "eventVersion": "1.1",
       "dynamodb": {
-        "ApproximateCreationDateTime": 0,
+        "ApproximateCreationDateTime": 1,
         "Keys": {
-          "pk": { "S": "userProfile#auth0|12345678" },
+          "pk": { "S": "userProfile#auth0|123456789" },
           "sk": { "S": "patient#123456789" }
         },
         "OldImage": {
-          "pk": { "S": "userProfile#auth0|12345678" },
+          "pk": { "S": "userProfile#auth0|123456789" },
           "sk": { "S": "patient#123456789" },
           "firstName": { "S": "Testin" },
           "lastName": { "S": "Preston" },
-          "type": { "S": "self" }
+          "type": { "S": "self" },
+          "testInt": { "N": "123" },
+          "testFloat": { "N": "1.23" },
+          "testBool": { "BOOL": "true" },
+          "testList": { "L": [ { "N": "1" }, { "N": "2" }, { "N": "3" } ] },
+          "testEmptyList": { "L": [] },
+          "testNull": { "NULL": true },
+          "testNestedNulls": { "L": [ { "NULL": true }  ] },
+          "testArrayFieldsCollapse": { "L": [
+            { "M": {
+                "duplicateField": { "N": 1 },
+                "nonDuplicateField": { "N": 2 }
+            } },
+            { "M": {
+              "duplicateField": { "N": 3 }
+            } }
+          ] }
         },
         "NewImage": {
-          "pk": { "S": "userProfile#auth0|12345678" },
+          "pk": { "S": "userProfile#auth0|123456789" },
           "sk": { "S": "patient#123456789" },
-          "firstName": { "S": "Testing" },
-          "lastName": { "S": "Prestong" },
-          "type": { "S": "self" }
+          "firstName": { "S": "Testin" },
+          "lastName": { "S": "Preston" },
+          "type": { "S": "self" },
+          "testInt": { "N": "456" },
+          "testFloat": { "N": "4.56" },
+          "testBool": { "BOOL": "true" },
+          "testList": { "L": [ { "N": "4" }, { "N": "5" }, { "N": "6" } ] },
+          "testEmptyList": { "L": [] },
+          "testNull": { "NULL": true },
+          "testNestedNulls": { "L": [ { "NULL": true }  ] },
+          "testArrayFieldsCollapse": { "L": [
+            { "M": {
+                "duplicateField": { "N": 4 },
+                "nonDuplicateField": { "N": 5 }
+            } },
+            { "M": {
+              "duplicateField": { "N": 6 }
+            } }
+          ] }
         },
         "SequenceNumber": "0",
         "SizeBytes": 0,
@@ -81,17 +113,33 @@
       "eventSourceArn": "arn:aws:dynamodb:::table",
       "eventVersion": "1.1",
       "dynamodb": {
-        "ApproximateCreationDateTime": 0,
+        "ApproximateCreationDateTime": 2,
         "Keys": {
-          "pk": { "S": "userProfile#auth0|1234567" },
-          "sk": { "S": "patient#1234567" }
+          "pk": { "S": "userProfile#auth0|123456789" },
+          "sk": { "S": "patient#123456789" }
         },
         "OldImage": {
-          "pk": { "S": "userProfile#auth0|1234567" },
-          "sk": { "S": "patient#1234567" },
+          "pk": { "S": "userProfile#auth0|123456789" },
+          "sk": { "S": "patient#123456789" },
           "firstName": { "S": "Testin" },
           "lastName": { "S": "Preston" },
-          "type": { "S": "self" }
+          "type": { "S": "self" },
+          "testInt": { "N": "456" },
+          "testFloat": { "N": "4.56" },
+          "testBool": { "BOOL": "true" },
+          "testList": { "L": [ { "N": "4" }, { "N": "5" }, { "N": "6" } ] },
+          "testEmptyList": { "L": [] },
+          "testNull": { "NULL": true },
+          "testNestedNulls": { "L": [ { "NULL": true }  ] },
+          "testArrayFieldsCollapse": { "L": [
+            { "M": {
+                "duplicateField": { "N": 4 },
+                "nonDuplicateField": { "N": 5 }
+            } },
+            { "M": {
+              "duplicateField": { "N": 6 }
+            } }
+          ] }
         },
         "SequenceNumber": "0",
         "SizeBytes": 0,
