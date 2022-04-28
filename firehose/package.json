@@ -2,7 +2,7 @@
   "name": "firehose",
   "version": "1.0.0",
   "description": "Data firehose from dynamo to bigquery",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "scripts": {
     "build": "tsc && cp -R gcp_keyfile dist/",
     "clean": "tsc --build --clean && rm -r dist",
@@ -16,6 +16,8 @@
     "typescript": "^4.6.2"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.76.0",
+    "@aws-sdk/util-dynamodb": "^3.76.0",
     "@google-cloud/bigquery": "^5.11.0",
     "zod": "^3.14.4"
   }

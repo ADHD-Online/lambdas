@@ -1,10 +1,13 @@
 import Mustache from 'mustache';
 import {
+  expectEnv,
   fetchConfig,
   sendEmail,
   sendSms,
   setNextSteps,
 } from './util';
+
+const STAGE = expectEnv('STAGE');
 
 export interface ViewData {
   patientRecordKey: {
@@ -34,7 +37,7 @@ export default <T extends ViewData>({
 
     if (view.email) {
       promises.push(sendEmail({
-        templateName: flowKey,
+        templateName: `${STAGE}-${flowKey}`,
         to: view.email,
         replacements: {
           ...view,
