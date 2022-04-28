@@ -15,10 +15,6 @@ const debug = (...args: any[]) => {
   if (STAGE !== 'prod') { console.log(...args); }
 };
 
-const debugError = (...args: any[]) => {
-  if (STAGE !== 'prod') { console.error(...args); }
-};
-
 const recordToTableName = (record: StreamRecord) => {
   const { pk, sk } = record.Keys;
 
@@ -50,18 +46,22 @@ const recordToTableName = (record: StreamRecord) => {
       return 'appointments';
 
     case jst(['patient', 'assessment']):
-      if (skSuffix === 'definition')
-        return `assessment_${skType}_definitions`;
+      if (skSuffix === 'definition') {
+        console.info('Omitting assessment definition record');
+        return null; // omit this record
+      }
 
-      else if (skSuffix === 'inFlight')
-        return `assessment_${skType}_inflights`;
+      if (skSuffix === 'inFlight') {
+        console.info('Omitting inFlight assessment record');
+        return null; // omit this record
+      }
 
-      else if (skSuffix === 'result')
+      if (skSuffix === 'result')
         return `assessment_${skType}_results`;
 
-      else
-        debugError('Could not classify record:', util.inspect(record, false, null));
-        throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
+      // else
+      console.warn('Omitting unclassified record:', util.inspect(record, false, null));
+      return null; // omit this record
 
     case jst(['patient', 'journey']):
       return 'journeys';
@@ -76,8 +76,8 @@ const recordToTableName = (record: StreamRecord) => {
       return 'userprofiles';
 
     default:
-      debugError('Could not classify record:', util.inspect(record, false, null));
-      return 'miscellaneous';
+      console.warn('Omitting unclassified record:', util.inspect(record, false, null));
+      return null; // omit this record
   }
 };
 
@@ -104,6 +104,10 @@ export const handler = async (event: DynamoDBStreamEvent) => {
   for (const eventRecord of event.Records) {
     const streamRecord = eventRecord.dynamodb;
     const tableName = recordToTableName(streamRecord);
+
+    // omit records that aren't given a name
+    if (tableName === null)
+      continue;
 
     if (!(tableName in tables)) {
       tables[tableName] = {
