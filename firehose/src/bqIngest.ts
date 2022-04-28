@@ -1,21 +1,18 @@
 import path from 'path';
 import util from 'util';
+import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { BigQuery, Table } from '@google-cloud/bigquery';
 import {
   DynamoDBStreamEvent,
   Schema,
   StreamRecord,
 } from './types';
-import { expectEnv, genSchema } from './util';
+import { expectEnv, genObjSchema } from './util';
 
 const STAGE = expectEnv('STAGE');
 
 const debug = (...args: any[]) => {
   if (STAGE !== 'prod') { console.log(...args); }
-};
-
-const debugError = (...args: any[]) => {
-  if (STAGE !== 'prod') { console.error(...args); }
 };
 
 const recordToTableName = (record: StreamRecord) => {
@@ -49,18 +46,22 @@ const recordToTableName = (record: StreamRecord) => {
       return 'appointments';
 
     case jst(['patient', 'assessment']):
-      if (skSuffix === 'definition')
-        return `assessment_${skType}_definitions`;
+      if (skSuffix === 'definition') {
+        console.info('Omitting assessment definition record');
+        return null; // omit this record
+      }
 
-      else if (skSuffix === 'inFlight')
-        return `assessment_${skType}_inflights`;
+      if (skSuffix === 'inFlight') {
+        console.info('Omitting inFlight assessment record');
+        return null; // omit this record
+      }
 
-      else if (skSuffix === 'result')
+      if (skSuffix === 'result')
         return `assessment_${skType}_results`;
 
-      else
-        debugError('Could not classify record:', util.inspect(record, false, null));
-        throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
+      // else
+      console.warn('Omitting unclassified record:', util.inspect(record, false, null));
+      return null; // omit this record
 
     case jst(['patient', 'journey']):
       return 'journeys';
@@ -75,15 +76,14 @@ const recordToTableName = (record: StreamRecord) => {
       return 'userprofiles';
 
     default:
-      debugError('Could not classify record:', util.inspect(record, false, null));
-      throw new Error(`Could not classify record: (pk: ${pk.S}, sk: ${sk.S})`);
+      console.warn('Omitting unclassified record:', util.inspect(record, false, null));
+      return null; // omit this record
   }
 };
 
-export const handler = async (event: DynamoDBStreamEvent) => {
+export default async (event: DynamoDBStreamEvent) => {
   // validate and transform
-  const event_ = DynamoDBStreamEvent.parse(event);
-  console.log(`Received ${event_.Records.length} rows for ingestion`);
+  console.log(`Received ${event.Records.length} rows for ingestion`);
 
   const dataset = new BigQuery({
     projectId: expectEnv('GCP_PROJECT_ID'),
@@ -101,9 +101,13 @@ export const handler = async (event: DynamoDBStreamEvent) => {
   }> = {};
 
   // sort rows for ingestion
-  for (const eventRecord of event_.Records) {
+  for (const eventRecord of event.Records) {
     const streamRecord = eventRecord.dynamodb;
     const tableName = recordToTableName(streamRecord);
+
+    // omit records that aren't given a name
+    if (tableName === null)
+      continue;
 
     if (!(tableName in tables)) {
       tables[tableName] = {
@@ -115,7 +119,7 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     const table = tables[tableName];
 
     const recordWithMeta = {
-      Keys: streamRecord.Keys,
+      Keys: unmarshall(streamRecord.Keys as any),
       Metadata: {
         eventKind: eventRecord.eventName,
         timestamp: streamRecord.ApproximateCreationDateTime,
@@ -123,12 +127,12 @@ export const handler = async (event: DynamoDBStreamEvent) => {
     };
 
     if ('NewImage' in streamRecord)
-      recordWithMeta['NewImage'] = streamRecord.NewImage;
+      recordWithMeta['NewImage'] = unmarshall(streamRecord.NewImage as any);
     if ('OldImage' in streamRecord)
-      recordWithMeta['OldImage'] = streamRecord.OldImage;
+      recordWithMeta['OldImage'] = unmarshall(streamRecord.OldImage as any);
 
     if (!('schema' in table)) {
-      table.schema = genSchema(recordWithMeta);
+      table.schema = genObjSchema(recordWithMeta);
 
       debug(`Generated schema for ${tableName}:`, util.inspect(table.schema, false, null));
 

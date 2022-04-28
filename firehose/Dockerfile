@@ -21,5 +21,5 @@ WORKDIR ${LAMBDA_TASK_ROOT}
 COPY package*.json ./
 COPY --from=build-step /build/dist .
 RUN npm ci --only=production
-CMD [ "index.handler" ]
+CMD [ "index.bqIngestHandler" ]
 
