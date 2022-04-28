@@ -2,7 +2,7 @@
   "name": "firehose",
   "version": "1.0.0",
   "description": "Data firehose from dynamo to bigquery",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "scripts": {
     "build": "tsc && cp -R gcp_keyfile dist/",
     "clean": "tsc --build --clean && rm -r dist",
