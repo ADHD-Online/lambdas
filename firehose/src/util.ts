@@ -2,8 +2,8 @@ import { Schema } from './types';
 
 export const expectEnv = (key: string, message?: string) => {
   const val = process.env[key];
-  if (!key)
-    throw new Error(`Missing env variable ${key}: ` + message ?? '');
+  if (!val)
+    throw new Error(`Missing env variable ${key}` + message ? `: ${message}` : '');
   return val;
 };
 
