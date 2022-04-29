@@ -122,6 +122,7 @@ export default async (event: DynamoDBStreamEvent) => {
       Keys: unmarshall(streamRecord.Keys as any),
       Metadata: {
         eventKind: eventRecord.eventName,
+        processed: 0, // for bigquery internal etl
         timestamp: streamRecord.ApproximateCreationDateTime,
       },
     };
