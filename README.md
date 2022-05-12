@@ -1,5 +1,8 @@
 # lambdas
 
+(DEPRECATED) - these now happily live in `ADHD-Online/iac` as a result of
+simplifying the CI/CD process.
+
 A monorepo-style place for lambdas to live
 
 ## Docker Image Environment Variables
